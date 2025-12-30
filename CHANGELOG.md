@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 7 new security queries (128 -> 135 total):
+  - **RODC Security**: Allowed RODC Password Replication Group members, Tier Zero missing from Denied RODC Replication
+  - **Domain Config**: Domain functional level check, Single point of failure DCs
+  - **AdminSDHolder**: Non-Tier Zero principals with AdminSDHolder control
+  - **Hygiene**: Logon scripts in trusted domains, Unresolved SIDs with outbound control
+- Comprehensive test suite for config singleton and utils module (77 tests total)
+
+### Fixed
+
+- README examples now include correct `-u neo4j` flag and default password
+- Test files use correct function names from abuse loader module
+
+### Changed
+
+- Removed internal development files from repository (CODE_REVIEW.md, QUERY_GAP_ANALYSIS.md, debug files)
+
 ## [0.1.0] - 2024-12-29
 
 ### Added

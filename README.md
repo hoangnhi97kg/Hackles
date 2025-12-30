@@ -6,10 +6,10 @@
 
 > **Extract quick wins from BloodHound Community Edition**
 
-A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **128 security queries** across 13 categories with **58 ready-to-use attack templates**.
+A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **135 security queries** across 13 categories with **58 ready-to-use attack templates**.
 
 ```bash
-python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 128 queries
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 135 queries
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adcs --privesc      # ADCS + privilege escalation
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html # Generate HTML report
 ```
@@ -20,7 +20,7 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 
 | Feature | Description |
 |---------|-------------|
-| **128 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, lateral movement |
+| **135 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, lateral movement |
 | **58 Abuse Templates** | Copy-paste attack commands with auto-filled placeholders |
 | **Multiple Outputs** | Table, JSON, CSV, HTML reports |
 | **Severity Filtering** | Focus on CRITICAL/HIGH findings only |
@@ -82,14 +82,14 @@ register-python-argcomplete --shell fish hackles | source
 
 | Category | Queries | Flag | Focus |
 |----------|:-------:|------|-------|
-| Security Hygiene | 17 | `--hygiene` | LAPS, SMB signing, stale passwords |
+| Security Hygiene | 19 | `--hygiene` | LAPS, SMB signing, AdminSDHolder, stale passwords |
 | ADCS | 16 | `--adcs` | ESC1-ESC15, golden certs, ManageCA |
+| ACL Abuse | 15 | `--acl` | GenericAll, WriteDacl, WriteOwner, unresolved SIDs |
 | Credentials | 15 | `--privesc` | Kerberoasting, DCSync, shadow creds |
-| ACL Abuse | 14 | `--acl` | GenericAll, WriteDacl, WriteOwner |
 | Lateral Movement | 14 | `--lateral` | RDP, DCOM, PSRemote, SQL, sessions |
-| Domain Analysis | 12 | `--basic` | Trusts, domain admins, cross-domain |
+| Domain Analysis | 14 | `--basic` | Trusts, functional level, single DC |
 | Owned Principals | 11 | `--owned-queries` | Paths from compromised accounts |
-| Dangerous Groups | 8 | `--groups` | DNSAdmins, Backup Ops, Schema Admins |
+| Dangerous Groups | 10 | `--groups` | DNSAdmins, Backup Ops, RODC replication |
 | Delegation | 7 | `--delegation` | Constrained, unconstrained, RBCD |
 | Attack Paths | 6 | `--attack-paths` | Shortest paths, attack chains |
 | Azure/Hybrid | 3 | `--azure` | AAD Connect, hybrid DCSync |
@@ -268,7 +268,7 @@ Plus: Golden Certificate paths, enrollment abuse detection.
 [*] Findings Summary
     CRITICAL: 1 | HIGH: 2 | MEDIUM: 5 | LOW: 3
 
-[+] Analysis completed in 1.23s (128 queries)
+[+] Analysis completed in 1.23s (135 queries)
 ```
 
 Owned principals are marked with `[!]` (yellow for standard, red for admin).

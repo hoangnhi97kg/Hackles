@@ -9,6 +9,7 @@ from .gpos_dc_ou import get_gpos_dc_ou
 from .laps_readers import get_laps_readers
 from .owns_relationships import get_owns_relationships
 from .top_controllers import get_top_controllers
+from .unresolved_sids import get_unresolved_sids
 from .write_account_restrictions import get_write_account_restrictions
 from .write_spn_paths import get_write_spn_paths
 from .shadow_admins import get_shadow_admins
@@ -25,6 +26,7 @@ __all__ = [
     'get_laps_readers',
     'get_owns_relationships',
     'get_top_controllers',
+    'get_unresolved_sids',
     'get_write_account_restrictions',
     'get_write_spn_paths',
     'get_shadow_admins',
