@@ -29,6 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `--edges-to 'DOMAIN ADMINS*'` - Inbound edges to multiple nodes
   - Results include source/target context column when wildcards are used
 
+- **Quick enumeration flags**: New standalone commands for rapid domain enumeration:
+  - `--computers` - List all domain computers with OS, LAPS, and delegation status
+  - `--users` - List all domain users with admin, SPN, AS-REP, and password flags
+  - `--spns` - List all Service Principal Names for Kerberoasting targeting
+
+- **`--quick-wins` command**: Consolidated view of lowest-effort/highest-impact attack paths:
+  - Direct paths to Domain Admins (1-2 hops)
+  - Kerberoastable admin accounts with password age
+  - AS-REP roastable accounts
+  - Direct ACL abuse to high-value targets (GenericAll, WriteDacl, etc. to DA/DC/Tier Zero)
+
+- **2 new coercion queries** (150 → 152 total):
+  - **Coercion Targets**: Lists all DCs and unconstrained delegation systems as potential coercion targets
+  - **Coercion to Unconstrained Chain**: Shows DC → Unconstrained attack chains for TGT capture (domain compromise path)
+
 ### Improved
 
 - **`--members` output**: Now includes Admin column showing `admincount` status, with results sorted by admin status first (admins at top)

@@ -114,6 +114,14 @@ def create_parser() -> argparse.ArgumentParser:
                              help='List all unconstrained delegation principals')
     filter_group.add_argument('--no-laps', action='store_true',
                              help='List all computers without LAPS')
+    filter_group.add_argument('--computers', action='store_true',
+                             help='List all domain computers')
+    filter_group.add_argument('--users', action='store_true',
+                             help='List all domain users')
+    filter_group.add_argument('--spns', action='store_true',
+                             help='List all SPNs (service principal names)')
+    filter_group.add_argument('--quick-wins', action='store_true',
+                             help='Show quick win attack paths (1-2 hops to DA)')
 
     # Query categories (can combine multiple)
     cat_group = parser.add_argument_group('Query Categories (combine with -a for all, or select specific)')

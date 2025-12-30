@@ -6,6 +6,8 @@ import time
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 
+from prettytable import PrettyTable
+
 from hackles.cli.parser import create_parser
 from hackles.cli.completion import setup_completion
 from hackles.core.config import config
@@ -776,6 +778,148 @@ def main():
 
         if args.no_laps:
             get_computers_without_laps(bh, args.domain, Severity.MEDIUM)
+            return
+
+        if args.computers:
+            results = bh.get_all_computers(args.domain)
+            if results:
+                print_header("All Domain Computers", Severity.INFO, len(results))
+                table = PrettyTable()
+                table.field_names = ["Computer", "OS", "Enabled", "LAPS", "Unconstrained"]
+                table.align = "l"
+                for r in results:
+                    table.add_row([
+                        r["name"],
+                        r["os"] or "Unknown",
+                        "Yes" if r["enabled"] else "No",
+                        "Yes" if r["laps"] else "No",
+                        "Yes" if r["unconstrained"] else "No"
+                    ])
+                print(table)
+                print(f"\n    Total: {len(results)} computer(s)")
+            else:
+                print_warning("No computers found")
+            return
+
+        if args.users:
+            results = bh.get_all_users(args.domain)
+            if results:
+                print_header("All Domain Users", Severity.INFO, len(results))
+                table = PrettyTable()
+                table.field_names = ["User", "Enabled", "Admin", "SPN", "AS-REP", "PwdNeverExpires"]
+                table.align = "l"
+                for r in results:
+                    table.add_row([
+                        r["name"],
+                        "Yes" if r["enabled"] else "No",
+                        "Yes" if r["admin"] else "No",
+                        "Yes" if r["spn"] else "No",
+                        "Yes" if r["asrep"] else "No",
+                        "Yes" if r["neverexpires"] else "No"
+                    ])
+                print(table)
+                print(f"\n    Total: {len(results)} user(s)")
+            else:
+                print_warning("No users found")
+            return
+
+        if args.spns:
+            results = bh.get_all_spns(args.domain)
+            if results:
+                print_header("All Service Principal Names", Severity.INFO, len(results))
+                table = PrettyTable()
+                table.field_names = ["Account", "SPN", "Enabled", "Admin"]
+                table.align = "l"
+                for r in results:
+                    table.add_row([
+                        r["account"],
+                        r["spn"],
+                        "Yes" if r["enabled"] else "No",
+                        "Yes" if r["admin"] else "No"
+                    ])
+                print(table)
+                print(f"\n    Total: {len(results)} SPN(s)")
+            else:
+                print_warning("No SPNs found")
+            return
+
+        if args.quick_wins:
+            results = bh.get_quick_wins(args.domain)
+            print(f"\n{Colors.BOLD}{'='*70}")
+            print(f"{'QUICK WINS SUMMARY':^70}")
+            print(f"{'='*70}{Colors.END}\n")
+
+            # Short paths to DA
+            if results["short_paths_to_da"]:
+                print(f"{Colors.FAIL}[CRITICAL] Direct Paths to Domain Admins (1-2 hops){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Principal", "Hops", "Path"]
+                table.align = "l"
+                for r in results["short_paths_to_da"]:
+                    # Build path string: -[Rel1]-> Node1 -[Rel2]-> Node2 ...
+                    nodes = r["nodes"]
+                    rels = r["path"]
+                    path_parts = []
+                    for i, rel in enumerate(rels):
+                        path_parts.append(f"-[{rel}]-> {nodes[i + 1]}")
+                    path_str = " ".join(path_parts)
+                    table.add_row([r["principal"], r["hops"], path_str])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No direct paths (1-2 hops) to Domain Admins{Colors.END}\n")
+
+            # Kerberoastable admins
+            if results["kerberoastable_admins"]:
+                print(f"{Colors.FAIL}[HIGH] Kerberoastable Admins (crack for instant privilege){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Account", "SPN", "Password Age (days)", "Privilege"]
+                table.align = "l"
+                for r in results["kerberoastable_admins"]:
+                    table.add_row([
+                        r["account"],
+                        r["spn"] or "Multiple",
+                        r["password_age_days"] or "Unknown",
+                        r["privilege"]
+                    ])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No Kerberoastable admin accounts{Colors.END}\n")
+
+            # AS-REP roastable
+            if results["asrep_roastable"]:
+                print(f"{Colors.WARNING}[HIGH] AS-REP Roastable (no pre-auth required){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Account", "Admin"]
+                table.align = "l"
+                for r in results["asrep_roastable"]:
+                    table.add_row([r["account"], "Yes" if r["admin"] else "No"])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No AS-REP roastable accounts{Colors.END}\n")
+
+            # Direct ACL abuse
+            if results["direct_acl_abuse"]:
+                print(f"{Colors.WARNING}[MEDIUM] Direct ACL Abuse to High Value Targets{Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Principal", "Permission", "Target"]
+                table.align = "l"
+                for r in results["direct_acl_abuse"]:
+                    table.add_row([r["principal"], r["permission"], r["target"]])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No direct ACL abuse paths to high-value targets{Colors.END}\n")
+
+            # Summary
+            total = (len(results["short_paths_to_da"]) + len(results["kerberoastable_admins"]) +
+                    len(results["asrep_roastable"]) + len(results["direct_acl_abuse"]))
+            if total > 0:
+                print(f"{Colors.BOLD}Total quick wins found: {total}{Colors.END}")
+            else:
+                print(f"{Colors.GREEN}No obvious quick wins found - deeper analysis required{Colors.END}")
             return
 
         # Validate domain if specified

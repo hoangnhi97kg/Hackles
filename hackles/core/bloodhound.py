@@ -550,3 +550,127 @@ class BloodHoundCE:
         LIMIT 100
         """
         return self.run_query(query, {"pattern": regex_pattern, "edge_types": ATTACK_EDGES})
+
+    def get_all_computers(self, domain: Optional[str] = None) -> list:
+        """Get all domain computers with key properties."""
+        domain_filter = ""
+        if domain:
+            domain_filter = f"AND toUpper(c.name) ENDS WITH toUpper('.{domain}')"
+
+        query = f"""
+        MATCH (c:Computer)
+        WHERE c.name IS NOT NULL {domain_filter}
+        RETURN c.name AS name, c.operatingsystem AS os, c.enabled AS enabled,
+               COALESCE(c.haslaps, false) AS laps, COALESCE(c.unconstraineddelegation, false) AS unconstrained
+        ORDER BY c.name
+        """
+        return self.run_query(query)
+
+    def get_all_users(self, domain: Optional[str] = None) -> list:
+        """Get all domain users with key properties."""
+        domain_filter = ""
+        if domain:
+            domain_filter = f"AND toUpper(u.name) ENDS WITH toUpper('@{domain}')"
+
+        query = f"""
+        MATCH (u:User)
+        WHERE u.name IS NOT NULL {domain_filter}
+        RETURN u.name AS name, u.enabled AS enabled, COALESCE(u.admincount, false) AS admin,
+               COALESCE(u.hasspn, false) AS spn, COALESCE(u.dontreqpreauth, false) AS asrep,
+               COALESCE(u.pwdneverexpires, false) AS neverexpires
+        ORDER BY u.admincount DESC, u.name
+        """
+        return self.run_query(query)
+
+    def get_all_spns(self, domain: Optional[str] = None) -> list:
+        """Get all Service Principal Names for targeting."""
+        domain_filter = ""
+        if domain:
+            domain_filter = f"AND toUpper(u.name) ENDS WITH toUpper('@{domain}')"
+
+        query = f"""
+        MATCH (u:User)
+        WHERE u.hasspn = true AND u.serviceprincipalnames IS NOT NULL {domain_filter}
+        UNWIND u.serviceprincipalnames AS spn
+        RETURN u.name AS account, spn AS spn, u.enabled AS enabled, COALESCE(u.admincount, false) AS admin
+        ORDER BY u.admincount DESC, spn
+        """
+        return self.run_query(query)
+
+    def get_quick_wins(self, domain: Optional[str] = None) -> dict:
+        """Get quick win attack paths - lowest effort, highest impact targets.
+
+        Returns a dict with categories of quick wins.
+        """
+        domain_filter = ""
+        if domain:
+            domain_filter = f"AND (d.name =~ '(?i).*{domain}.*' OR n.domain =~ '(?i).*{domain}.*')"
+
+        results = {
+            "short_paths_to_da": [],
+            "kerberoastable_admins": [],
+            "asrep_roastable": [],
+            "direct_acl_abuse": []
+        }
+
+        # 1. Short paths to Domain Admins (1-2 hops)
+        short_paths_query = f"""
+        MATCH (n)
+        WHERE n.enabled = true {domain_filter.replace('d.name', 'n.domain')}
+        MATCH (g:Group)
+        WHERE g.objectid ENDS WITH '-512'
+        MATCH p = shortestPath((n)-[*1..2]->(g))
+        WHERE length(p) <= 2
+        RETURN n.name AS principal, length(p) AS hops,
+               [rel IN relationships(p) | type(rel)] AS path,
+               [node IN nodes(p) | node.name] AS nodes
+        ORDER BY length(p), n.name
+        LIMIT 20
+        """
+        results["short_paths_to_da"] = self.run_query(short_paths_query)
+
+        # 2. Kerberoastable admins (admin accounts with SPNs)
+        kerb_admins_query = f"""
+        MATCH (u:User)
+        WHERE u.hasspn = true AND u.admincount = true AND u.enabled = true
+        {domain_filter.replace('n.', 'u.').replace('d.name', 'u.domain')}
+        OPTIONAL MATCH (u)-[:MemberOf*1..]->(g:Group)
+        WHERE g.objectid ENDS WITH '-512' OR g.objectid ENDS WITH '-519'
+        RETURN u.name AS account, u.serviceprincipalnames[0] AS spn,
+               CASE WHEN u.pwdlastset IS NOT NULL
+                    THEN duration.inDays(datetime({{epochMillis: u.pwdlastset}}), datetime()).days
+                    ELSE null END AS password_age_days,
+               CASE WHEN g IS NOT NULL THEN 'DA Member' ELSE 'Admin' END AS privilege
+        ORDER BY password_age_days DESC
+        LIMIT 10
+        """
+        results["kerberoastable_admins"] = self.run_query(kerb_admins_query)
+
+        # 3. AS-REP roastable accounts
+        asrep_query = f"""
+        MATCH (u:User)
+        WHERE u.dontreqpreauth = true AND u.enabled = true
+        {domain_filter.replace('n.', 'u.').replace('d.name', 'u.domain')}
+        RETURN u.name AS account, u.admincount AS admin
+        ORDER BY u.admincount DESC, u.name
+        LIMIT 10
+        """
+        results["asrep_roastable"] = self.run_query(asrep_query)
+
+        # 4. Direct ACL abuse to high-value targets
+        acl_query = f"""
+        MATCH (n)-[r]->(target)
+        WHERE type(r) IN ['GenericAll', 'WriteDacl', 'WriteOwner', 'ForceChangePassword', 'AddMember']
+        AND (target.objectid ENDS WITH '-512' OR target.objectid ENDS WITH '-519'
+             OR target.objectid ENDS WITH '-516' OR target:Tag_Tier_Zero
+             OR 'admin_tier_0' IN target.system_tags)
+        AND n.enabled = true
+        AND NOT (n.objectid ENDS WITH '-512' OR n.objectid ENDS WITH '-519')
+        {domain_filter.replace('d.name', 'n.domain')}
+        RETURN n.name AS principal, type(r) AS permission, target.name AS target
+        ORDER BY type(r), n.name
+        LIMIT 15
+        """
+        results["direct_acl_abuse"] = self.run_query(acl_query)
+
+        return results

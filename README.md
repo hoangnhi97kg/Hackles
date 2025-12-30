@@ -20,8 +20,10 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 
 | Feature | Description |
 |---------|-------------|
-| **150 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, lateral movement, service accounts |
+| **152 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, coercion, lateral movement |
 | **58 Abuse Templates** | Copy-paste attack commands with OPSEC notes and BloodHound.py integration |
+| **Quick Wins Summary** | `--quick-wins` shows 1-2 hop paths to DA, Kerberoastable admins, AS-REP targets, ACL abuse |
+| **Quick Enumeration** | `--computers`, `--users`, `--spns` for rapid domain enumeration |
 | **Node Investigation** | `--investigate USER` shows properties, attack edges, group memberships, paths to DA in one command |
 | **Wildcard Support** | Use `*` patterns in node operations: `--investigate '*.DOMAIN.COM'`, `--sessions '*.DOMAIN.COM'` |
 | **Multiple Outputs** | Table, JSON, CSV, HTML reports |
@@ -154,6 +156,10 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --kerberoastable  # K
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --asrep           # AS-REP roastable
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --unconstrained   # Unconstrained delegation
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --no-laps         # Computers without LAPS
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --computers       # All domain computers
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --users           # All domain users
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --spns            # All SPNs for targeting
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --quick-wins      # Quick wins summary
 ```
 
 ### Node Operations
