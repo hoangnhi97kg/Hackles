@@ -339,6 +339,7 @@ pytest tests/ --cov=hackles
 
 ## References
 
+- [bloodhound-quickwin](https://github.com/kaluche/bloodhound-quickwin) - The original quick wins tool that inspired this project
 - [BloodHound CE Documentation](https://bloodhound.specterops.io/)
 - [ADCS Attack Paths - Part 1](https://posts.specterops.io/adcs-attack-paths-in-bloodhound-part-1-799f3d3b03cf)
 - [ADCS Attack Paths - Part 2](https://specterops.io/blog/2024/05/01/adcs-attack-paths-in-bloodhound-part-2/)
