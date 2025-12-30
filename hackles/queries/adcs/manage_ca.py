@@ -46,6 +46,6 @@ def get_manage_ca(bh: BloodHoundCE, domain: Optional[str] = None, severity: Seve
             ["Principal", "Type", "Certificate Authority"],
             [[r["principal"], r["type"], r["ca"]] for r in results]
         )
-        print_abuse_info("ManageCA", results, domain)
+        print_abuse_info("ADCSESC7", results, domain)
 
     return result_count

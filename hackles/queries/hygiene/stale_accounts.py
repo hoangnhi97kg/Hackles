@@ -6,6 +6,7 @@ from typing import Optional, TYPE_CHECKING
 from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
+from hackles.core.config import config
 import time
 
 
@@ -19,13 +20,13 @@ if TYPE_CHECKING:
     severity=Severity.LOW
 )
 def get_stale_accounts(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
-    """Get stale user accounts (no login in 90+ days)"""
+    """Get stale user accounts (no login in configured threshold days)"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
 
-    # Calculate 90 days ago in epoch (approximate)
+    # Calculate threshold days ago in epoch
     import time
-    ninety_days_ago = int(time.time()) - (90 * 24 * 60 * 60)
+    threshold_days_ago = int(time.time()) - (config.stale_days * 24 * 60 * 60)
 
     query = f"""
     MATCH (u:User)
@@ -42,11 +43,11 @@ def get_stale_accounts(bh: BloodHoundCE, domain: Optional[str] = None, severity:
     ORDER BY u.lastlogon
     LIMIT 50
     """
-    params["cutoff"] = ninety_days_ago
+    params["cutoff"] = threshold_days_ago
     results = bh.run_query(query, params)
     result_count = len(results)
 
-    if not print_header("Stale User Accounts (90+ days)", severity, result_count):
+    if not print_header(f"Stale User Accounts ({config.stale_days}+ days)", severity, result_count):
         return result_count
     print_subheader(f"Found {result_count} stale account(s) (limit 50)")
 

@@ -6,10 +6,10 @@
 
 > **Extract quick wins from BloodHound Community Edition**
 
-A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **135 security queries** across 13 categories with **58 ready-to-use attack templates**.
+A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **150 security queries** across 13 categories with **58 ready-to-use attack templates**.
 
 ```bash
-python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 135 queries
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 150 queries
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adcs --privesc      # ADCS + privilege escalation
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html # Generate HTML report
 ```
@@ -20,12 +20,14 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 
 | Feature | Description |
 |---------|-------------|
-| **135 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, lateral movement |
-| **58 Abuse Templates** | Copy-paste attack commands with auto-filled placeholders |
+| **150 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, lateral movement, service accounts |
+| **58 Abuse Templates** | Copy-paste attack commands with OPSEC notes and BloodHound.py integration |
 | **Multiple Outputs** | Table, JSON, CSV, HTML reports |
 | **Severity Filtering** | Focus on CRITICAL/HIGH findings only |
 | **Owned Tracking** | Highlights compromised accounts with `[!]` markers |
 | **Path Finding** | Shortest paths to Domain Admin, Domain Controllers |
+| **Configurable Thresholds** | Customize stale days, path depth, result limits |
+| **Abuse Template Variables** | Pre-fill DC_IP, YOUR_PASSWORD, and other placeholders |
 | **Shell Completion** | Tab completion for bash/zsh/fish |
 
 ---
@@ -43,6 +45,12 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 ```bash
 git clone https://github.com/Real-Fruit-Snacks/hackles.git
 cd hackles
+
+# Create and activate virtual environment (recommended, required on some systems)
+python3 -m venv venv
+source venv/bin/activate  # Linux/macOS
+# venv\Scripts\activate   # Windows
+
 pip install -r requirements.txt
 ```
 
@@ -82,15 +90,15 @@ register-python-argcomplete --shell fish hackles | source
 
 | Category | Queries | Flag | Focus |
 |----------|:-------:|------|-------|
+| ACL Abuse | 22 | `--acl` | GenericAll, WriteDacl, WriteOwner, ForceChangePassword, AddMember, AllExtendedRights |
+| Credentials | 18 | `--privesc` | Kerberoasting, DCSync, shadow creds, service account security |
 | Security Hygiene | 19 | `--hygiene` | LAPS, SMB signing, AdminSDHolder, stale passwords |
-| ADCS | 16 | `--adcs` | ESC1-ESC15, golden certs, ManageCA |
-| ACL Abuse | 15 | `--acl` | GenericAll, WriteDacl, WriteOwner, unresolved SIDs |
-| Credentials | 15 | `--privesc` | Kerberoasting, DCSync, shadow creds |
+| ADCS | 17 | `--adcs` | ESC1-ESC15, golden certs, ManageCA, enrollment agents |
 | Lateral Movement | 14 | `--lateral` | RDP, DCOM, PSRemote, SQL, sessions |
 | Domain Analysis | 14 | `--basic` | Trusts, functional level, single DC |
 | Owned Principals | 11 | `--owned-queries` | Paths from compromised accounts |
 | Dangerous Groups | 10 | `--groups` | DNSAdmins, Backup Ops, RODC replication |
-| Delegation | 7 | `--delegation` | Constrained, unconstrained, RBCD |
+| Delegation | 11 | `--delegation` | Constrained, unconstrained, RBCD, delegation chains, S4U2Self attacks |
 | Attack Paths | 6 | `--attack-paths` | Shortest paths, attack chains |
 | Azure/Hybrid | 3 | `--azure` | AAD Connect, hybrid DCSync |
 | Miscellaneous | 3 | `--misc` | Circular groups, duplicate SPNs |
@@ -186,7 +194,44 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --clear-owned
 # Tier Zero management
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --tier-zero 'SVC_BACKUP@CORP.LOCAL'
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --untier-zero 'SVC_OLD@CORP.LOCAL'
+
+# Focus owned queries on specific principal (useful with multiple owned accounts)
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --owned-queries --from-owned 'USER1@CORP.LOCAL'
 ```
+
+### Advanced Configuration
+
+```bash
+# Customize path query limits
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --attack-paths --max-path-depth 10 --max-paths 50
+
+# Customize stale account threshold (default: 90 days)
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --hygiene --stale-days 30
+
+# Pre-fill abuse template placeholders
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --abuse --abuse-var DC_IP=192.168.1.10
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --abuse --abuse-var DC_IP=192.168.1.10 --abuse-var YOUR_PASSWORD='Summer2024!'
+
+# Load abuse variables from config file
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --abuse --abuse-config ~/pentest/vars.conf
+```
+
+<details>
+<summary><b>Abuse Config File Format</b></summary>
+
+Create `~/.hackles/abuse.conf` (auto-loaded) or specify with `--abuse-config`:
+
+```bash
+# Abuse template variables
+DC_IP=192.168.1.10
+ATTACKER_IP=10.10.14.5
+YOUR_PASSWORD=Summer2024!
+YOUR_USER=jsmith
+```
+
+CLI `--abuse-var` arguments override config file values.
+
+</details>
 
 ### Custom Queries
 
@@ -258,17 +303,18 @@ Plus: Golden Certificate paths, enrollment abuse detection.
 
 [*] [HIGH] Kerberoastable Users (SPN Set)
     Found 2 Kerberoastable user(s)
-+-------------------------------+--------------+---------+
-| Name                          | Display Name | Enabled |
-+-------------------------------+--------------+---------+
-| [!] R.HAGGARD@CORP.LOCAL      | R. Haggard   | True    |
-| SVC_SQL@CORP.LOCAL            | SQL Service  | True    |
-+-------------------------------+--------------+---------+
+    [!] 1 have passwords older than 6 months (easier to crack)
++-------------------------------+--------------+---------+-------+----------+
+| Name                          | Display Name | Enabled | Admin | Pwd Age  |
++-------------------------------+--------------+---------+-------+----------+
+| [!] R.HAGGARD@CORP.LOCAL      | R. Haggard   | True    | No    | >1 year  |
+| SVC_SQL@CORP.LOCAL            | SQL Service  | True    | No    | >3 months|
++-------------------------------+--------------+---------+-------+----------+
 
 [*] Findings Summary
     CRITICAL: 1 | HIGH: 2 | MEDIUM: 5 | LOW: 3
 
-[+] Analysis completed in 1.23s (135 queries)
+[+] Analysis completed in 1.23s (150 queries)
 ```
 
 Owned principals are marked with `[!]` (yellow for standard, red for admin).
@@ -331,6 +377,9 @@ Contributions are welcome! Please:
 ### Development Setup
 
 ```bash
+# Activate virtual environment first (see Installation)
+source venv/bin/activate
+
 pip install -r requirements-dev.txt
 pytest tests/ --cov=hackles
 ```

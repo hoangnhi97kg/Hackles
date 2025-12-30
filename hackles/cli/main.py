@@ -219,6 +219,32 @@ def main():
             print(f"{Colors.WARNING}[!] No valid severity levels provided. Valid: CRITICAL,HIGH,MEDIUM,LOW,INFO{Colors.END}")
             sys.exit(1)
 
+    # Set user input enhancement config
+    if args.from_owned:
+        config.from_owned = args.from_owned
+    if args.stale_days:
+        config.stale_days = args.stale_days
+    if args.max_path_depth:
+        config.max_path_depth = args.max_path_depth
+    if args.max_paths:
+        config.max_paths = args.max_paths
+
+    # Load abuse variables from config file first (can be overridden by CLI)
+    default_abuse_config = Path.home() / '.hackles' / 'abuse.conf'
+    if args.abuse_config:
+        config.load_abuse_config(Path(args.abuse_config))
+    elif default_abuse_config.exists():
+        config.load_abuse_config(default_abuse_config)
+
+    # CLI abuse vars override config file values
+    if args.abuse_var:
+        for var in args.abuse_var:
+            if '=' in var:
+                key, value = var.split('=', 1)
+                config.abuse_vars[key.strip()] = value.strip()
+            else:
+                print(f"{Colors.WARNING}[!] Invalid --abuse-var format: {var} (expected KEY=VALUE){Colors.END}")
+
     # Helper to check if we should print status messages
     def status_print(msg: str) -> None:
         """Print status message only in table output mode."""

@@ -1,4 +1,4 @@
-name: ADCS ESC11 - EDITF_ATTRIBUTESUBJECTALTNAME2 on CA
+name: ADCSESC11
 description: |
   ESC11 occurs when EDITF_ATTRIBUTESUBJECTALTNAME2 flag is enabled on the CA,
   allowing requesters to specify an arbitrary Subject Alternative Name (SAN)

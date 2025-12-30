@@ -6,8 +6,9 @@ from typing import Optional, TYPE_CHECKING
 from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader
-from hackles.display.paths import print_path
+from hackles.display.paths import print_paths_grouped
 from hackles.core.cypher import node_type
+from hackles.core.config import config
 
 
 if TYPE_CHECKING:
@@ -23,15 +24,19 @@ def get_owned_to_high_value(bh: BloodHoundCE, domain: Optional[str] = None, seve
     """Find shortest paths from owned principals to any high value target"""
     # Rewritten to avoid cartesian product warning
     # BloodHound CE uses 'admin_tier_0' for tier zero assets
+    from_owned_filter = "AND toUpper(n.name) = toUpper($from_owned)" if config.from_owned else ""
+    params = {"from_owned": config.from_owned} if config.from_owned else {}
+
     query = f"""
     MATCH (n)
     WHERE (n:Tag_Owned OR 'owned' IN n.system_tags OR n.owned = true)
+    {from_owned_filter}
     WITH n
     MATCH (hvt)
     WHERE ('admin_tier_0' IN hvt.system_tags OR 'high_value' IN hvt.system_tags OR hvt.highvalue = true)
     AND n <> hvt
     WITH n, hvt
-    MATCH p=shortestPath((n)-[*1..]->(hvt))
+    MATCH p=shortestPath((n)-[*1..{config.max_path_depth}]->(hvt))
     RETURN
         [node IN nodes(p) | node.name] AS nodes,
         [node IN nodes(p) | CASE
@@ -43,9 +48,9 @@ def get_owned_to_high_value(bh: BloodHoundCE, domain: Optional[str] = None, seve
         [r IN relationships(p) | type(r)] AS relationships,
         length(p) AS path_length
     ORDER BY length(p)
-    LIMIT 20
+    LIMIT {config.max_paths}
     """
-    results = bh.run_query(query)
+    results = bh.run_query(query, params)
     result_count = len(results)
 
     if not print_header("Shortest Paths: Owned -> High Value Targets", severity, result_count):
@@ -53,7 +58,6 @@ def get_owned_to_high_value(bh: BloodHoundCE, domain: Optional[str] = None, seve
     print_subheader(f"Found {result_count} path(s) from owned to high value")
 
     if results:
-        for r in results:
-            print_path(r)
+        print_paths_grouped(results)
 
     return result_count

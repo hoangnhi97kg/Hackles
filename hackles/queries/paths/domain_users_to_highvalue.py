@@ -6,8 +6,9 @@ from typing import Optional, TYPE_CHECKING
 from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_warning
-from hackles.display.paths import print_path
+from hackles.display.paths import print_paths_grouped
 from hackles.core.cypher import node_type
+from hackles.core.config import config
 
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ def get_domain_users_to_highvalue(bh: BloodHoundCE, domain: Optional[str] = None
     params = {"domain": domain} if domain else {}
 
     query = f"""
-    MATCH p=shortestPath((g:Group)-[*1..]->(t))
+    MATCH p=shortestPath((g:Group)-[*1..{config.max_path_depth}]->(t))
     WHERE g.objectid ENDS WITH '-513'
       AND (t.highvalue = true OR t.objectid ENDS WITH '-512' OR t.objectid ENDS WITH '-519')
       AND g <> t
@@ -35,7 +36,7 @@ def get_domain_users_to_highvalue(bh: BloodHoundCE, domain: Optional[str] = None
         [n IN nodes(p) | {node_type('n')}] AS node_types,
         [r IN relationships(p) | type(r)] AS relationships,
         length(p) AS path_length
-    LIMIT 25
+    LIMIT {config.max_paths}
     """
     results = bh.run_query(query, params)
     result_count = len(results)
@@ -46,7 +47,6 @@ def get_domain_users_to_highvalue(bh: BloodHoundCE, domain: Optional[str] = None
 
     if results:
         print_warning("[!] ANY domain user can escalate via these paths!")
-        for r in results[:10]:
-            print_path(r)
+        print_paths_grouped(results)
 
     return result_count

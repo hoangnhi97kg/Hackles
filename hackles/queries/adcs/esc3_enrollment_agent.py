@@ -1,4 +1,4 @@
-"""ADCS ESC2/ESC3 Any Purpose"""
+"""ADCS ESC3 - Enrollment Agent Abuse"""
 from __future__ import annotations
 
 from typing import Optional, TYPE_CHECKING
@@ -14,20 +14,27 @@ from hackles.core.utils import extract_domain
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC2/ESC3 Any Purpose",
+    name="ADCS ESC3 - Enrollment Agent Abuse",
     category="ADCS",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.CRITICAL
 )
-def get_any_purpose_templates(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
-    """Get ESC2/ESC3 - Any Purpose certificate templates"""
+def get_esc3_enrollment_agent(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+    """Find ESC3 vulnerable configurations - Enrollment Agent abuse.
+
+    ESC3 allows principals to request certificates on behalf of other users
+    using enrollment agent templates.
+    """
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
 
+    # Look for Certificate Request Agent templates (OID 1.3.6.1.4.1.311.20.2.1)
     query = f"""
     MATCH (u)-[:Enroll]->(c:CertTemplate)
-    WHERE '2.5.29.37.0' IN c.effectiveekus
+    WHERE '1.3.6.1.4.1.311.20.2.1' IN c.effectiveekus
+    AND (u.admincount IS NULL OR u.admincount = false)
     AND NOT u.objectid ENDS WITH '-512'
     AND NOT u.objectid ENDS WITH '-519'
     {domain_filter}
@@ -43,17 +50,16 @@ def get_any_purpose_templates(bh: BloodHoundCE, domain: Optional[str] = None, se
     results = bh.run_query(query, params)
     result_count = len(results)
 
-    if not print_header("ADCS ESC2/ESC3 - Any Purpose Templates", severity, result_count):
+    if not print_header("ADCS ESC3 - Enrollment Agent Templates", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} enrollment right(s) on Any Purpose templates (limit 100)")
+    print_subheader(f"Found {result_count} enrollment right(s) on Enrollment Agent templates (limit 100)")
 
     if results:
-        print_warning("[!] Any Purpose templates can be abused for client authentication!")
+        print_warning("[!] Enrollment Agent templates allow requesting certificates on behalf of other users!")
         print_table(
             ["Principal", "Type", "Template", "CA"],
             [[r["principal"], r["type"], r["template"], r.get("ca", "Unknown")] for r in results]
         )
-        # ESC2 is the more common abuse path
-        print_abuse_info("ADCSESC2", results, extract_domain(results, domain))
+        print_abuse_info("ADCSESC3", results, extract_domain(results, domain))
 
     return result_count

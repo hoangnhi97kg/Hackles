@@ -60,16 +60,35 @@ def _build_context_from_result(result: Dict, domain: Optional[str] = None) -> Di
         context['TARGET_USER'] = target_val
         context['TARGET_COMPUTER'] = target_val
 
+    # Group target - when target is a group, also set GROUP placeholder
+    target_type = result.get('target_type', '').lower() if result.get('target_type') else ''
+    if target_type == 'group' and result.get('target'):
+        context['GROUP'] = get_username(get_value(result['target']))
+    elif result.get('group'):
+        context['GROUP'] = get_username(result['group'])
+
+    # Computer target with $ suffix for RBCD attacks
+    if target_type == 'computer' and result.get('target'):
+        target_name = get_username(get_value(result['target']))
+        if not target_name.endswith('$'):
+            context['TARGET$'] = target_name + '$'
+        else:
+            context['TARGET$'] = target_name
+
     # Principal - the attacker's compromised account
     if result.get('principal'):
         principal = get_username(result['principal'])
         context['USER'] = principal
         context['YOUR_USER'] = principal
 
-    # Computer targets
+    # Computer targets (for lateral movement abuse templates)
     if result.get('computer'):
-        context['COMPUTER'] = get_username(result['computer'])
-        context['TARGET_COMPUTER'] = get_username(result['computer'])
+        computer_name = get_username(result['computer'])
+        context['COMPUTER'] = computer_name
+        context['TARGET_COMPUTER'] = computer_name
+        # Also set TARGET for lateral movement templates (WinRM, RDP, etc.)
+        if 'TARGET' not in context:
+            context['TARGET'] = computer_name
 
     # SPN targets (constrained delegation)
     if result.get('targets'):
@@ -152,6 +171,15 @@ def print_abuse_info(attack_type: str, results: List[Dict] = None, domain: Optio
     if results and len(results) > 0:
         context.update(_build_context_from_result(results[0], domain))
 
+    # Merge user-provided abuse vars (override auto-detected values)
+    context.update(config.abuse_vars)
+
+    # Sync PASSWORD and YOUR_PASSWORD aliases (templates use both interchangeably)
+    if 'YOUR_PASSWORD' in context and 'PASSWORD' not in context:
+        context['PASSWORD'] = context['YOUR_PASSWORD']
+    elif 'PASSWORD' in context and 'YOUR_PASSWORD' not in context:
+        context['YOUR_PASSWORD'] = context['PASSWORD']
+
     # Get target info for header
     target_name = None
     if results and len(results) > 0:
@@ -187,8 +215,8 @@ def print_abuse_info(attack_type: str, results: List[Dict] = None, domain: Optio
         # Section 2: Ready-to-Paste Commands (with values filled in)
         # Only show if we have context to fill in
         if context:
-            print(f"\n    {Colors.GREEN}{Colors.BOLD}Ready-to-Paste:{Colors.END}")
-
+            # Build list of commands that can be filled in first
+            ready_commands = []
             for cmd in info['commands']:
                 if not cmd:
                     continue
@@ -202,11 +230,17 @@ def print_abuse_info(attack_type: str, results: List[Dict] = None, domain: Optio
                 # Fill in placeholders
                 filled = _fill_command_placeholders(cmd_str, context)
 
-                # Only show if different from template (something was filled in)
+                # Only include if different from template (something was filled in)
                 if filled != cmd_str or not _has_placeholders(filled):
                     # Highlight any remaining placeholders in the filled command
                     if _has_placeholders(filled):
                         filled = _highlight_placeholders(filled)
+                    ready_commands.append(filled)
+
+            # Only print header if we have commands to show
+            if ready_commands:
+                print(f"\n    {Colors.GREEN}{Colors.BOLD}Ready-to-Paste:{Colors.END}")
+                for filled in ready_commands:
                     print(f"      {Colors.WHITE}{filled}{Colors.END}")
 
     # Show all targets if multiple results

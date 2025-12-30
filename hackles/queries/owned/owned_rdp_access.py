@@ -9,6 +9,7 @@ from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.core.config import config
 
 
 if TYPE_CHECKING:
@@ -22,15 +23,19 @@ if TYPE_CHECKING:
 )
 def get_owned_rdp_access(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Find computers where owned principals have RDP access"""
+    from_owned_filter = "AND toUpper(owned.name) = toUpper($from_owned)" if config.from_owned else ""
+    params = {"from_owned": config.from_owned} if config.from_owned else {}
+
     query = f"""
     MATCH (owned)-[:CanRDP|MemberOf*1..3]->(c:Computer)
     WHERE (owned:Tag_Owned OR 'owned' IN owned.system_tags OR owned.owned = true)
+    {from_owned_filter}
     RETURN owned.name AS owned_principal, {node_type('owned')} AS owned_type,
            c.name AS computer, c.operatingsystem AS os, c.enabled AS enabled
     ORDER BY owned.name
     LIMIT 50
     """
-    results = bh.run_query(query)
+    results = bh.run_query(query, params)
     result_count = len(results)
 
     if not print_header("Owned RDP Access", severity, result_count):

@@ -31,6 +31,10 @@ def create_parser() -> argparse.ArgumentParser:
                             help='Hide banner and zero-result queries')
     query_group.add_argument('--abuse', action='store_true',
                             help='Show attack commands and exploitation templates')
+    query_group.add_argument('--abuse-var', action='append', metavar='KEY=VALUE',
+                            help='Set abuse template variable (e.g., DC_IP=192.168.1.10)')
+    query_group.add_argument('--abuse-config', metavar='FILE',
+                            help='Load abuse variables from config file')
     query_group.add_argument('--debug', action='store_true',
                             help='Show query execution details')
     query_group.add_argument('-c', '--custom', action='append',
@@ -39,6 +43,8 @@ def create_parser() -> argparse.ArgumentParser:
                             help='Filter by severity (comma-separated: CRITICAL,HIGH,MEDIUM,LOW,INFO)')
     query_group.add_argument('--stats', action='store_true',
                             help='Show domain statistics and exit')
+    query_group.add_argument('--stale-days', type=int, default=90, metavar='N',
+                            help='Days threshold for stale accounts (default: 90)')
     output_group = parser.add_argument_group('Output Options')
     output_group.add_argument('--json', action='store_true',
                              help='Output results as JSON')
@@ -57,6 +63,8 @@ def create_parser() -> argparse.ArgumentParser:
                             help='Remove owned status from principal')
     owned_group.add_argument('--clear-owned', action='store_true',
                             help='Remove owned status from ALL principals')
+    owned_group.add_argument('--from-owned', metavar='PRINCIPAL',
+                            help='Filter owned queries to specific principal')
     tier_group = parser.add_argument_group('Tier Zero Management')
     tier_group.add_argument('--tier-zero', action='append', metavar='PRINCIPAL',
                            help='Mark principal as Tier Zero')
@@ -69,6 +77,10 @@ def create_parser() -> argparse.ArgumentParser:
                            help='Find paths from principal to Domain Admins')
     path_group.add_argument('--path-to-dc', metavar='PRINCIPAL',
                            help='Find paths from principal to Domain Controllers')
+    path_group.add_argument('--max-path-depth', type=int, default=5, metavar='N',
+                           help='Maximum hops in path queries (default: 5)')
+    path_group.add_argument('--max-paths', type=int, default=25, metavar='N',
+                           help='Maximum paths to return (default: 25)')
     node_group = parser.add_argument_group('Node Operations')
     node_group.add_argument('--info', metavar='PRINCIPAL',
                            help='Show all properties and labels for a node')

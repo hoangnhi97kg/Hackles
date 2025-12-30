@@ -6,7 +6,8 @@ from typing import Optional, TYPE_CHECKING
 from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.abuse.printer import print_abuse_info
+from hackles.core.utils import extract_domain
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -41,5 +42,6 @@ def get_userpassword_attribute(bh: BloodHoundCE, domain: Optional[str] = None, s
             ["Name", "Type", "Password"],
             [[r["name"], r["type"], r["password"]] for r in results]
         )
+        print_abuse_info("PlaintextPassword", results, extract_domain(results, domain))
 
     return result_count

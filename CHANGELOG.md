@@ -9,11 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 7 new security queries (128 -> 135 total):
-  - **RODC Security**: Allowed RODC Password Replication Group members, Tier Zero missing from Denied RODC Replication
-  - **Domain Config**: Domain functional level check, Single point of failure DCs
-  - **AdminSDHolder**: Non-Tier Zero principals with AdminSDHolder control
-  - **Hygiene**: Logon scripts in trusted domains, Unresolved SIDs with outbound control
+- **22 new security queries** (128 → 150 total):
+  - **ACL Abuse** (7 new):
+    - GenericAll, WriteDacl, ForceChangePassword, GenericWrite, AddMember - dedicated queries with target admin/enabled status
+    - AllExtendedRights abuse detection - finds non-admin principals with full extended rights (password reset, DCSync, LAPS read)
+    - Schema/Configuration partition control - detects WriteDACL/WriteOwner over critical AD partitions (forest-wide risk)
+  - **Delegation** (4 new):
+    - Multi-hop delegation chains to DCs
+    - Computer accounts with dangerous delegation
+    - S4U2Self + Unconstrained Delegation - Protocol Transition attack detection (impersonate ANY user)
+    - Unconstrained Delegation → DC paths - Golden Ticket risk assessment
+  - **Service Account Security** (3 new): Admin rights, dangerous delegation, interactive logon detection
+  - **ADCS**: ESC3 dedicated enrollment agent abuse query with template detection
+  - **RODC Security** (2 new): Allowed replication group members, Tier Zero missing from denied replication
+  - **Domain Config** (2 new): Functional level check, single point of failure DCs
+  - **Hygiene** (2 new): Logon scripts in trusted domains, unresolved SIDs with outbound control
+  - **ACL** (1 new): AdminSDHolder control by non-Tier Zero principals
+
+- **User Input Enhancement Features**:
+  - `--from-owned PRINCIPAL`: Filter owned queries to analyze paths from a specific owned principal only (11 owned queries updated)
+  - `--abuse-var KEY=VALUE`: Pre-fill abuse template placeholders (e.g., `--abuse-var DC_IP=192.168.1.10`)
+  - `--abuse-config FILE`: Load abuse variables from config file (KEY=VALUE format)
+  - Auto-loads `~/.hackles/abuse.conf` if it exists
+  - `--stale-days N`: Customize stale account threshold (default: 90 days) - affects stale accounts and computer stale password queries
+  - `--max-path-depth N`: Maximum hops in path queries (default: 5) - affects 15 path-finding queries
+  - `--max-paths N`: Maximum paths to return from queries (default: 25) - affects 15 path-finding queries
+
+- **9 abuse template wirings** added to previously uncovered queries:
+  - ESC8, ESC11, ESC15 ADCS queries now call their abuse templates
+  - ESC2/ESC3 any_purpose_templates.py now calls ADCSESC2
+  - manage_ca.py now calls ADCSESC7
+  - WriteAccountRestrictions, GPO Interesting Names, Plaintext userPassword queries
+
 - Comprehensive test suite for config singleton and utils module (77 tests total)
 
 ### Fixed
@@ -22,18 +49,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test files use correct function names from abuse loader module
 - **Domain Functional Level query**: Fixed type comparison error when BloodHound returns level as string (e.g., "2016") instead of integer
 - **RODC Allowed Replication query**: Fixed Cypher syntax error with ORDER BY after RETURN DISTINCT
+- **Delegation Chains query**: Fixed Cypher syntax error - ORDER BY now uses aliased column names after RETURN DISTINCT
+- **Abuse template "Ready-to-Paste" section**: No longer shows empty header when context cannot fill command placeholders
+- **Abuse template placeholder substitution** - Enhanced Ready-to-Paste command generation:
+  - `<GROUP>` placeholder now correctly fills when target is a Group (e.g., `net rpc group addmem 'DOMAIN ADMINS'`)
+  - `<TARGET$>` placeholder now adds `$` suffix for computer account targets (RBCD attacks)
+  - `<TARGET>` placeholder now fills for lateral movement commands (WinRM, RDP, PSRemote) from computer field
+  - `<PASSWORD>` and `<YOUR_PASSWORD>` are now synced as aliases - providing either via `--abuse-var` fills both
 
 ### Improved
 
-- **Query Output Completeness**: Enhanced 23 queries to return actionable information:
-  - **Kerberoasting queries** (3): Now show Service Principal Names (SPNs) for exploitation
+- **Query Output Completeness**: Enhanced 27 queries to return actionable information:
+  - **Kerberoasting queries** (3): Now show Service Principal Names (SPNs) AND password age for crack likelihood
+  - **Constrained Delegation**: Now shows if targets are DC/high-value services with warning
+  - **GPOs on DC OU**: Now shows "X of Y" totals instead of truncating controllers
   - **Path queries** (8): Now display full attack paths with node types and relationships instead of just start/end
   - **ADCS queries** (4): Now include Certificate Authority (CA) name for targeting
   - **Count-only queries** (3): Now show sample targets alongside counts
-  - **Delegation queries** (1): Now show actual delegation SPNs for attack execution
   - **ACL queries** (2): Now show permission type and GPO controllers
   - **ESC6 query**: Now shows usable templates on vulnerable CAs
   - **Circular groups query**: Now shows full cycle path for remediation
+
+- **Path Display Formatting**: Completely redesigned path output to use table format (9 queries updated):
+  - Paths now display in proper tables with columns: Hops, Attack Path
+  - Full path shown with nodes and relationships inline (no truncation)
+  - Maximum 10 paths displayed with "... and X more" summary for additional paths
+  - Owned principals marked with `[!]` prefix
+  - Example output:
+    ```
+    +------+---------------------------------------------------------------------------------+
+    | Hops | Attack Path                                                                     |
+    +------+---------------------------------------------------------------------------------+
+    | 3    | [!]R.ANDREWS -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC20 |
+    | 6    | [!]R.ANDREWS -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC20 -[DCFor]-> OSCP.EXAM -[Contains]-> DOMAIN ADMINS |
+    +------+---------------------------------------------------------------------------------+
+    ```
+  - Affected queries: Owned->High Value, Owned->DA, Owned->ADCS, Owned->Unconstrained, Owned->Kerberoastable, Owned->DCSync, Kerberoastable->DA, AS-REP->DA, Domain Users->High Value
+
+- **Abuse Templates Enhanced** with BloodHound.py and OPSEC notes:
+  - Kerberoasting: Added bloodhound.py collection, `/nowrap` flag for Rubeus, OPSEC for TGS requests (event 4769)
+  - DCSync: Added bloodhound.py DCOnly, OPSEC for replication events (4662)
+  - ASREPRoasting: Added bloodhound.py, OPSEC for AS-REP (event 4768)
+  - GoldenCert: Added Certipy backup, OPSEC for CA compromise
+  - GenericAll: Added shadow credentials, PowerView, OPSEC for modifications
+  - GenericWrite: Added PowerView `Set-DomainObject` method, cleanup commands to remove fake SPNs, OPSEC notes
+  - ReadLAPSPassword: Updated to use NetExec (nxc) as primary tool, added usage example with retrieved password
+  - ADCSESC8: Added `certipy relay` as simpler alternative to ntlmrelayx
 
 ### Changed
 

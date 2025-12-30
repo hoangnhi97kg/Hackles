@@ -6,7 +6,8 @@ from typing import Optional, TYPE_CHECKING
 from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.abuse.printer import print_abuse_info
+from hackles.core.utils import extract_domain
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -43,5 +44,6 @@ def get_write_account_restrictions(bh: BloodHoundCE, domain: Optional[str] = Non
             ["Principal", "Type", "Target Computer"],
             [[r["principal"], r["type"], r["target"]] for r in results]
         )
+        print_abuse_info("WriteAccountRestrictions", results, extract_domain(results, domain))
 
     return result_count

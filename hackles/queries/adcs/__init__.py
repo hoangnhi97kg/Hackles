@@ -6,6 +6,7 @@ from .adcs_summary import get_adcs_summary
 from .any_purpose_templates import get_any_purpose_templates
 from .esc15_vulnerable import get_esc15_vulnerable
 from .esc1_vulnerable import get_esc1_vulnerable
+from .esc3_enrollment_agent import get_esc3_enrollment_agent
 from .esc4_template_acl import get_esc4_template_acl
 from .esc5_pki_object import get_esc5_pki_object
 from .esc6_san_flag import get_esc6_san_flag
@@ -24,6 +25,7 @@ __all__ = [
     'get_any_purpose_templates',
     'get_esc15_vulnerable',
     'get_esc1_vulnerable',
+    'get_esc3_enrollment_agent',
     'get_esc4_template_acl',
     'get_esc5_pki_object',
     'get_esc6_san_flag',

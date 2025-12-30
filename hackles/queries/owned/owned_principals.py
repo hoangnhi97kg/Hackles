@@ -7,6 +7,7 @@ from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.core.cypher import node_type
+from hackles.core.config import config
 
 
 if TYPE_CHECKING:
@@ -21,13 +22,19 @@ if TYPE_CHECKING:
 def get_owned_principals(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Get all owned principals (BloodHound CE uses system_tags)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
-    params = {"domain": domain} if domain else {}
+    from_owned_filter = "AND toUpper(n.name) = toUpper($from_owned)" if config.from_owned else ""
+    params = {}
+    if domain:
+        params["domain"] = domain
+    if config.from_owned:
+        params["from_owned"] = config.from_owned
 
     # Check both system_tags and owned property (BloodHound CE versions differ)
     query = f"""
     MATCH (n)
     WHERE (n:Tag_Owned OR 'owned' IN n.system_tags OR n.owned = true)
     {domain_filter}
+    {from_owned_filter}
     RETURN
         n.name AS name,
         {node_type('n')} AS type,
