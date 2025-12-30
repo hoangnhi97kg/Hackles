@@ -108,8 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     +------+---------------------------------------------------------------------------------+
     | Hops | Attack Path                                                                     |
     +------+---------------------------------------------------------------------------------+
-    | 3    | [!]R.ANDREWS -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC20 |
-    | 6    | [!]R.ANDREWS -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC20 -[DCFor]-> OSCP.EXAM -[Contains]-> DOMAIN ADMINS |
+    | 3    | [!]J.SMITH -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC01 |
+    | 6    | [!]J.SMITH -[MemberOf]-> DOMAIN USERS -[MemberOf]-> USERS -[LocalToComputer]-> DC01 -[DCFor]-> CORP.LOCAL -[Contains]-> DOMAIN ADMINS |
     +------+---------------------------------------------------------------------------------+
     ```
   - Affected queries: Owned->High Value, Owned->DA, Owned->ADCS, Owned->Unconstrained, Owned->Kerberoastable, Owned->DCSync, Kerberoastable->DA, AS-REP->DA, Domain Users->High Value
