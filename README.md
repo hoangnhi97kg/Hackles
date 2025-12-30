@@ -9,9 +9,9 @@
 A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **128 security queries** across 13 categories with **58 ready-to-use attack templates**.
 
 ```bash
-python -m hackles -p 'password' -a                    # Run all 128 queries
-python -m hackles -p 'password' --adcs --privesc      # ADCS + privilege escalation
-python -m hackles -p 'password' -a --html report.html # Generate HTML report
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 128 queries
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adcs --privesc      # ADCS + privilege escalation
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html # Generate HTML report
 ```
 
 ---
@@ -50,13 +50,13 @@ pip install -r requirements.txt
 
 ```bash
 # List available domains
-python -m hackles -p 'password' -l
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -l
 
 # Run all queries with abuse commands shown
-python -m hackles -p 'password' -a --abuse
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --abuse
 
 # Generate HTML report
-python -m hackles -p 'password' -a --html report.html
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 ```
 
 <details>
@@ -96,7 +96,7 @@ register-python-argcomplete --shell fish hackles | source
 | Miscellaneous | 3 | `--misc` | Circular groups, duplicate SPNs |
 | Exchange | 2 | `--exchange` | Exchange domain rights |
 
-**Run multiple categories:** `python -m hackles -p 'pass' --adcs --acl --privesc`
+**Run multiple categories:** `python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adcs --acl --privesc`
 
 ---
 
@@ -106,93 +106,93 @@ register-python-argcomplete --shell fish hackles | source
 
 ```bash
 # All queries
-python -m hackles -p 'password' -a
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a
 
 # Specific categories
-python -m hackles -p 'password' --privesc --adcs
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --privesc --adcs
 
 # Filter by severity
-python -m hackles -p 'password' -a --severity CRITICAL,HIGH
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --severity CRITICAL,HIGH
 
 # Quiet mode (hide banner + zero-result queries)
-python -m hackles -p 'password' -a -q
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a -q
 
 # Show abuse commands for each finding
-python -m hackles -p 'password' -a --abuse
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --abuse
 
 # Filter by domain
-python -m hackles -p 'password' -a -d CORP.LOCAL
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a -d CORP.LOCAL
 
 # Debug mode (show Cypher queries and timing)
-python -m hackles -p 'password' -a --debug
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --debug
 ```
 
 ### Output Formats
 
 ```bash
-python -m hackles -p 'password' -a --json > results.json
-python -m hackles -p 'password' -a --csv > results.csv
-python -m hackles -p 'password' -a --html report.html
-python -m hackles -p 'password' -a --no-color | tee output.txt
-python -m hackles -p 'password' -a --progress  # Show progress bar
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --json > results.json
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --csv > results.csv
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --no-color | tee output.txt
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --progress  # Show progress bar
 ```
 
 ### Quick Filters
 
 ```bash
-python -m hackles -p 'password' --kerberoastable  # Kerberoastable users
-python -m hackles -p 'password' --asrep           # AS-REP roastable
-python -m hackles -p 'password' --unconstrained   # Unconstrained delegation
-python -m hackles -p 'password' --no-laps         # Computers without LAPS
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --kerberoastable  # Kerberoastable users
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --asrep           # AS-REP roastable
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --unconstrained   # Unconstrained delegation
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --no-laps         # Computers without LAPS
 ```
 
 ### Node Operations
 
 ```bash
 # Search and explore
-python -m hackles -p 'password' --search '*ADMIN*'
-python -m hackles -p 'password' --info 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --search '*ADMIN*'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --info 'USER@CORP.LOCAL'
 
 # Path finding
-python -m hackles -p 'password' --path 'USER@CORP.LOCAL' 'DC01.CORP.LOCAL'
-python -m hackles -p 'password' --path-to-da 'USER@CORP.LOCAL'
-python -m hackles -p 'password' --path-to-dc 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --path 'USER@CORP.LOCAL' 'DC01.CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --path-to-da 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --path-to-dc 'USER@CORP.LOCAL'
 
 # Group membership
-python -m hackles -p 'password' --members 'DOMAIN ADMINS@CORP.LOCAL'
-python -m hackles -p 'password' --memberof 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --members 'DOMAIN ADMINS@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --memberof 'USER@CORP.LOCAL'
 
 # Admin rights and sessions
-python -m hackles -p 'password' --adminto 'DC01.CORP.LOCAL'
-python -m hackles -p 'password' --adminof 'USER@CORP.LOCAL'
-python -m hackles -p 'password' --sessions 'SERVER01.CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adminto 'DC01.CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adminof 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --sessions 'SERVER01.CORP.LOCAL'
 
 # Edge exploration
-python -m hackles -p 'password' --edges-from 'USER@CORP.LOCAL'
-python -m hackles -p 'password' --edges-to 'DOMAIN ADMINS@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --edges-from 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --edges-to 'DOMAIN ADMINS@CORP.LOCAL'
 ```
 
 ### Owned & Tier Zero Management
 
 ```bash
 # Mark principals as owned (persists in Neo4j)
-python -m hackles -p 'password' -o 'USER@CORP.LOCAL'
-python -m hackles -p 'password' -o 'USER1@CORP.LOCAL' -o 'USER2@CORP.LOCAL' -a
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -o 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -o 'USER1@CORP.LOCAL' -o 'USER2@CORP.LOCAL' -a
 
 # Remove owned status
-python -m hackles -p 'password' --unown 'USER@CORP.LOCAL'
-python -m hackles -p 'password' --clear-owned
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --unown 'USER@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --clear-owned
 
 # Tier Zero management
-python -m hackles -p 'password' --tier-zero 'SVC_BACKUP@CORP.LOCAL'
-python -m hackles -p 'password' --untier-zero 'SVC_OLD@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --tier-zero 'SVC_BACKUP@CORP.LOCAL'
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --untier-zero 'SVC_OLD@CORP.LOCAL'
 ```
 
 ### Custom Queries
 
 ```bash
-python -m hackles -p 'password' -c my_query.cypher
-python -m hackles -p 'password' -c ./custom_queries/
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -c my_query.cypher
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -c ./custom_queries/
 ```
 
 Query format with optional severity:
@@ -301,7 +301,7 @@ nc -zv 127.0.0.1 7687
 docker ps | grep neo4j
 
 # Try explicit connection
-python -m hackles -u neo4j -p 'password' -b 'bolt://127.0.0.1:7687' -l
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -b 'bolt://127.0.0.1:7687' -l
 ```
 
 </details>
@@ -310,7 +310,7 @@ python -m hackles -u neo4j -p 'password' -b 'bolt://127.0.0.1:7687' -l
 <summary><b>No Results</b></summary>
 
 1. Verify data is ingested in BloodHound GUI
-2. Check domain filter matches exactly: `python -m hackles -p 'pass' -l`
+2. Check domain filter matches exactly: `python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -l`
 3. Mark principals as "owned" in BloodHound UI for owned queries to work
 
 </details>
