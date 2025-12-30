@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-30
+
 ### Added
 
 - **22 new security queries** (128 → 150 total):
@@ -141,5 +143,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment variable support for credentials
 - No hardcoded sensitive values
 
-[Unreleased]: https://github.com/Real-Fruit-Snacks/hackles/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Real-Fruit-Snacks/hackles/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Real-Fruit-Snacks/hackles/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Real-Fruit-Snacks/hackles/releases/tag/v0.1.0
