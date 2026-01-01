@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **BloodHound CE API Integration**: New API client for BloodHound CE operations (no Neo4j password required):
+  - `--auth` - Authenticate to BloodHound CE and store API token in `~/.config/hackles/hackles.ini`
+  - `--api-url URL` - Custom BloodHound CE URL (default: `http://localhost:8080`)
+  - `--api-config FILE` - Custom config file location
+  - Uses HMAC-SHA256 authentication per BloodHound CE API spec
+
+- **BloodHound CE API: Data Ingestion**: New `--ingest` command to upload collector data directly via API:
+  - Supports JSON and ZIP files from SharpHound/BloodHound.py collectors
+  - Glob pattern support: `--ingest *.zip`, `--ingest /path/to/*.json`
+  - Multiple files in single upload job
+  - Progress feedback and ingestion status polling
+  - Example: `hackles --ingest bloodhound_data.zip computers.json`
+
+- **BloodHound CE API: Database Clearing**: New `--clear-database` command to delete data from BloodHound CE via the API:
+  - `--delete-all` - Delete all graph data + history
+  - `--delete-ad` - Delete Active Directory graph data only
+  - `--delete-azure` - Delete Azure/Entra ID graph data only
+  - `--delete-sourceless` - Delete sourceless graph data only
+  - `--delete-ingest-history` - Delete file ingest history
+  - `--delete-quality-history` - Delete data quality history
+  - `-y, --yes` - Skip confirmation prompt for scripting
+  - Safety features: Requires typing "DELETE" to confirm, fails in non-interactive mode without `--yes`
+  - Example: `hackles --clear-database --delete-all --yes`
+
+- **`--audit` Consolidated Security Audit**: New command for quick security hygiene assessment:
+  - Kerberoastable admin accounts (HIGH)
+  - AS-REP roastable users (HIGH)
+  - Unconstrained delegation on non-DC systems (HIGH)
+  - Unsupported operating systems (MEDIUM)
+  - Computers without LAPS (MEDIUM)
+  - Enabled guest accounts (HIGH)
+  - Admin accounts with password never expires (MEDIUM)
+  - Users with path to Domain Admins (HIGH)
+  - Supports `--json`, `--csv`, `--html` output formats
+  - Example: `hackles -p 'pass' --audit --json`
+
+- **Enhanced `--stats` with ADCS and Infrastructure Counts**:
+  - Enterprise CAs count
+  - Certificate Templates count
+  - Domain Controllers count
+  - Protected Users count
+  - New "ADCS" and "Infrastructure" sections in table output
+  - Added to JSON/CSV output formats
+
 ## [0.3.0] - 2025-12-30
 
 ### Added

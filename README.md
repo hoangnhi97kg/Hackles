@@ -23,6 +23,7 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 | **152 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, coercion, lateral movement |
 | **58 Abuse Templates** | Copy-paste attack commands with OPSEC notes and BloodHound.py integration |
 | **Quick Wins Summary** | `--quick-wins` shows 1-2 hop paths to DA, Kerberoastable admins, AS-REP targets, ACL abuse |
+| **Security Audit** | `--audit` consolidated hygiene report: Kerberoastable admins, AS-REP, unconstrained delegation, unsupported OS, LAPS, guest accounts |
 | **Quick Enumeration** | `--computers`, `--users`, `--spns` for rapid domain enumeration |
 | **Node Investigation** | `--investigate USER` shows properties, attack edges, group memberships, paths to DA in one command |
 | **Wildcard Support** | Use `*` patterns in node operations: `--investigate '*.DOMAIN.COM'`, `--sessions '*.DOMAIN.COM'` |
@@ -32,6 +33,7 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 | **Path Finding** | Shortest paths to Domain Admin, Domain Controllers |
 | **Configurable Thresholds** | Customize stale days, path depth, result limits |
 | **Abuse Template Variables** | Pre-fill DC_IP, YOUR_PASSWORD, and other placeholders |
+| **BloodHound CE API** | Ingest data files and clear database without Neo4j access |
 | **Shell Completion** | Tab completion for bash/zsh/fish |
 
 ---
@@ -176,6 +178,7 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --computers       # A
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --users           # All domain users
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --spns            # All SPNs for targeting
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --quick-wins      # Quick wins summary
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --audit           # Security audit report
 ```
 
 ### Node Operations
@@ -268,6 +271,40 @@ YOUR_USER=jsmith
 ```
 
 CLI `--abuse-var` arguments override config file values.
+
+</details>
+
+### BloodHound CE API Operations
+
+Hackles can interact directly with the BloodHound CE API for data ingestion and management (no Neo4j password required).
+
+```bash
+# Authenticate and store API token (interactive prompts for token ID/key)
+python -m hackles --auth
+python -m hackles --auth --api-url http://bloodhound.local:8080  # Custom URL
+
+# Ingest data files
+python -m hackles --ingest *.zip
+python -m hackles --ingest bloodhound_data.json computers.json users.json
+
+# Clear database (requires confirmation)
+python -m hackles --clear-database --delete-all              # Delete everything
+python -m hackles --clear-database --delete-all --yes        # Skip confirmation
+python -m hackles --clear-database --delete-ad               # Delete AD data only
+python -m hackles --clear-database --delete-azure            # Delete Azure data only
+python -m hackles --clear-database --delete-ad --delete-azure
+python -m hackles --clear-database --delete-ingest-history   # Clear ingest history
+python -m hackles --clear-database --delete-quality-history  # Clear quality history
+```
+
+<details>
+<summary><b>API Token Setup</b></summary>
+
+1. Log into BloodHound CE web interface
+2. Go to **Administration > API Tokens > Create Token**
+3. Copy the Token ID and Token Key
+4. Run `python -m hackles --auth` and paste when prompted
+5. Credentials are stored in `~/.config/hackles/hackles.ini`
 
 </details>
 

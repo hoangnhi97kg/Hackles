@@ -671,3 +671,110 @@ class BloodHoundCE:
         results["direct_acl_abuse"] = self.run_query(acl_query, params)
 
         return results
+
+    def get_audit_results(self, domain: Optional[str] = None) -> Dict[str, Any]:
+        """Run consolidated security audit checks.
+
+        Returns dict with audit categories and findings for:
+        - Kerberoastable admin accounts
+        - AS-REP roastable users
+        - Unconstrained delegation (non-DC)
+        - Unsupported operating systems
+        - Computers without LAPS (count)
+        - Enabled guest accounts
+        - Admin accounts with password never expires
+        - Users with path to DA (count)
+
+        Args:
+            domain: Optional domain filter
+
+        Returns:
+            Dict with audit results by category
+        """
+        domain_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
+        domain_and = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
+        params = {"domain": domain} if domain else {}
+
+        results: Dict[str, Any] = {
+            "kerberoastable_admins": [],
+            "asrep_roastable": [],
+            "unconstrained_delegation": [],
+            "unsupported_os": [],
+            "no_laps_count": 0,
+            "guest_enabled": [],
+            "pwd_never_expires_admins": [],
+            "users_path_to_da": 0,
+        }
+
+        # 1. Kerberoastable Admin Accounts
+        query = f"""
+        MATCH (u:User {{hasspn: true, enabled: true}})
+        WHERE (u.admincount = true OR u:Tag_Tier_Zero)
+        AND NOT u.name STARTS WITH 'KRBTGT' {domain_and}
+        RETURN u.name AS name, u.displayname AS displayname
+        ORDER BY u.name LIMIT 25
+        """
+        results["kerberoastable_admins"] = self.run_query(query, params)
+
+        # 2. AS-REP Roastable Users
+        query = f"""
+        MATCH (u:User {{dontreqpreauth: true, enabled: true}}) {domain_filter}
+        RETURN u.name AS name, COALESCE(u.admincount, false) AS admin
+        ORDER BY u.admincount DESC, u.name LIMIT 25
+        """
+        results["asrep_roastable"] = self.run_query(query, params)
+
+        # 3. Unconstrained Delegation (non-DC)
+        query = f"""
+        MATCH (c:Computer {{unconstraineddelegation: true, enabled: true}})
+        WHERE NOT c.objectid ENDS WITH '-516' {domain_and}
+        RETURN c.name AS name, c.operatingsystem AS os
+        ORDER BY c.name LIMIT 25
+        """
+        results["unconstrained_delegation"] = self.run_query(query, params)
+
+        # 4. Unsupported Operating Systems
+        query = f"""
+        MATCH (c:Computer {{enabled: true}})
+        WHERE c.operatingsystem =~ '.*(2000|2003|2008|XP|Vista|Windows 7|Windows 8).*' {domain_and}
+        RETURN c.name AS name, c.operatingsystem AS os
+        ORDER BY c.operatingsystem, c.name LIMIT 25
+        """
+        results["unsupported_os"] = self.run_query(query, params)
+
+        # 5. Computers without LAPS (count only for efficiency)
+        query = f"""
+        MATCH (c:Computer {{enabled: true}})
+        WHERE (c.haslaps IS NULL OR c.haslaps = false) {domain_and}
+        RETURN count(c) AS total
+        """
+        laps_results = self.run_query(query, params)
+        results["no_laps_count"] = laps_results[0]["total"] if laps_results else 0
+
+        # 6. Guest Accounts Enabled
+        query = f"""
+        MATCH (u:User {{enabled: true}})
+        WHERE u.objectid ENDS WITH '-501' {domain_and}
+        RETURN u.name AS name, u.domain AS domain
+        """
+        results["guest_enabled"] = self.run_query(query, params)
+
+        # 7. Admin Password Never Expires
+        query = f"""
+        MATCH (u:User {{enabled: true, pwdneverexpires: true, admincount: true}}) {domain_filter}
+        RETURN u.name AS name
+        ORDER BY u.name LIMIT 25
+        """
+        results["pwd_never_expires_admins"] = self.run_query(query, params)
+
+        # 8. Users with Path to DA (count only for efficiency)
+        query = f"""
+        MATCH p=shortestPath((u:User {{enabled: true}})-[*1..5]->(g:Group))
+        WHERE (g.objectid ENDS WITH '-512' OR g.objectid ENDS WITH '-519') {domain_and}
+        AND NOT u.objectid ENDS WITH '-500'
+        RETURN count(DISTINCT u) AS total
+        """
+        path_results = self.run_query(query, params)
+        results["users_path_to_da"] = path_results[0]["total"] if path_results else 0
+
+        return results

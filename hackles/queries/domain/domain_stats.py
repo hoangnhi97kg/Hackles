@@ -80,6 +80,64 @@ def get_domain_stats(bh: BloodHoundCE, domain: Optional[str] = None, severity: S
     if results:
         print_subheader(f"Groups: {results[0]['total']}")
 
+    # ADCS stats
+    adcs_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
+    adcs_and = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
+
+    # Enterprise CAs
+    ca_query = f"""
+    MATCH (n:EnterpriseCA) {adcs_filter}
+    RETURN count(n) AS total
+    """
+    ca_results = bh.run_query(ca_query, params)
+    ca_count = ca_results[0]["total"] if ca_results else 0
+
+    # Certificate Templates
+    template_query = f"""
+    MATCH (n:CertTemplate) {adcs_filter}
+    RETURN count(n) AS total
+    """
+    template_results = bh.run_query(template_query, params)
+    template_count = template_results[0]["total"] if template_results else 0
+
+    # Domain Controllers
+    dc_query = f"""
+    MATCH (n:Computer)
+    WHERE n.objectid ENDS WITH '-516' {adcs_and}
+    RETURN count(n) AS total
+    """
+    dc_results = bh.run_query(dc_query, params)
+    dc_count = dc_results[0]["total"] if dc_results else 0
+
+    # Protected Users
+    protected_query = f"""
+    MATCH (u:User)-[:MemberOf*1..]->(g:Group)
+    WHERE g.objectid ENDS WITH '-525' {adcs_and}
+    RETURN count(DISTINCT u) AS total
+    """
+    protected_results = bh.run_query(protected_query, params)
+    protected_count = protected_results[0]["total"] if protected_results else 0
+
+    # Only show ADCS section if there's data
+    if ca_count > 0 or template_count > 0:
+        print_subheader("ADCS")
+        print_table(
+            ["Metric", "Count"],
+            [
+                ["Enterprise CAs", ca_count],
+                ["Certificate Templates", template_count],
+            ]
+        )
+
+    print_subheader("Infrastructure")
+    print_table(
+        ["Metric", "Count"],
+        [
+            ["Domain Controllers", dc_count],
+            ["Protected Users", protected_count],
+        ]
+    )
+
     # Risk scoring
     from hackles.core.scoring import calculate_exposure_metrics, calculate_risk_score, get_risk_rating
     metrics = calculate_exposure_metrics(bh, domain)

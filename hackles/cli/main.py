@@ -163,6 +163,53 @@ def collect_stats_data(bh: BloodHoundCE, domain: Optional[str] = None) -> Dict[s
     if results:
         stats["groups"] = results[0]["total"]
 
+    # ADCS stats
+    stats["adcs"] = {"enterprise_cas": 0, "cert_templates": 0}
+    stats["domain_controllers"] = 0
+    stats["protected_users"] = 0
+
+    # Domain filter for ADCS nodes (use different variable name)
+    adcs_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
+    adcs_and = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
+
+    # Enterprise CAs
+    query = f"""
+    MATCH (n:EnterpriseCA) {adcs_filter}
+    RETURN count(n) AS total
+    """
+    results = bh.run_query(query, params)
+    if results:
+        stats["adcs"]["enterprise_cas"] = results[0]["total"]
+
+    # Certificate Templates
+    query = f"""
+    MATCH (n:CertTemplate) {adcs_filter}
+    RETURN count(n) AS total
+    """
+    results = bh.run_query(query, params)
+    if results:
+        stats["adcs"]["cert_templates"] = results[0]["total"]
+
+    # Domain Controllers (objectid ends with -516)
+    query = f"""
+    MATCH (n:Computer)
+    WHERE n.objectid ENDS WITH '-516' {adcs_and}
+    RETURN count(n) AS total
+    """
+    results = bh.run_query(query, params)
+    if results:
+        stats["domain_controllers"] = results[0]["total"]
+
+    # Protected Users (members of group ending with -525)
+    query = f"""
+    MATCH (u:User)-[:MemberOf*1..]->(g:Group)
+    WHERE g.objectid ENDS WITH '-525' {adcs_and}
+    RETURN count(DISTINCT u) AS total
+    """
+    results = bh.run_query(query, params)
+    if results:
+        stats["protected_users"] = results[0]["total"]
+
     # Risk scoring
     metrics = calculate_exposure_metrics(bh, domain)
     score = calculate_risk_score(metrics)
@@ -306,6 +353,205 @@ def output_csv(results: List[Dict[str, Any]]) -> None:
             writer.writerow([r['query'], r['severity'], r['count'], ''])
 
 
+def do_auth(args) -> None:
+    """Handle --auth: Authenticate to BloodHound CE and store API token."""
+    from hackles.api.config import APIConfig
+    from hackles.api.client import BloodHoundAPI, BloodHoundAPIError
+
+    api_config = APIConfig(args.api_config)
+
+    # Use URL from args (has default) or existing config
+    url = args.api_url
+
+    print(f"\n{Colors.BLUE}[*] Create an API token in BloodHound CE:{Colors.END}")
+    print(f"    Administration > API Tokens > Create Token")
+    print()
+
+    token_id = input("Token ID: ").strip()
+    token_key = input("Token Key: ").strip()
+
+    if not token_id or not token_key:
+        print(f"{Colors.FAIL}[!] Token ID and Key are required{Colors.END}")
+        return
+
+    print(f"\n{Colors.BLUE}[*] Testing connection to {url}...{Colors.END}")
+
+    try:
+        api = BloodHoundAPI(url, token_id, token_key)
+        if api.test_connection():
+            user_info = api.get_self()
+            user_name = user_info.get('data', {}).get('name', 'Unknown')
+            print(f"{Colors.GREEN}[+] Authentication successful!{Colors.END}")
+            print(f"    User: {user_name}")
+
+            api_config.save(url=url, token_id=token_id, token_key=token_key)
+            print(f"{Colors.GREEN}[+] Credentials saved to {api_config.config_file}{Colors.END}")
+        else:
+            print(f"{Colors.FAIL}[!] Authentication failed. Check your credentials.{Colors.END}")
+    except BloodHoundAPIError as e:
+        print(f"{Colors.FAIL}[!] Connection error: {e}{Colors.END}")
+    except Exception as e:
+        print(f"{Colors.FAIL}[!] Error: {e}{Colors.END}")
+
+
+def do_ingest(args) -> None:
+    """Handle --ingest: Upload JSON/ZIP files to BloodHound CE."""
+    from hackles.api.config import APIConfig
+    from hackles.api.client import BloodHoundAPI, BloodHoundAPIError
+    from hackles.api.ingest import ingest_files, expand_file_patterns, format_bytes
+
+    api_config = APIConfig(args.api_config)
+
+    if not api_config.has_credentials():
+        print(f"{Colors.FAIL}[!] No API credentials found. Run --auth first.{Colors.END}")
+        return
+
+    url, token_id, token_key = api_config.get_credentials()
+
+    # Expand file patterns
+    files = expand_file_patterns(args.ingest)
+    if not files:
+        print(f"{Colors.FAIL}[!] No matching files found{Colors.END}")
+        return
+
+    print(f"{Colors.BLUE}[*] Found {len(files)} file(s) to upload:{Colors.END}")
+    for f in files:
+        print(f"    - {f.name}")
+    print()
+
+    api = BloodHoundAPI(url, token_id, token_key)
+
+    # Progress callback
+    def progress(filename: str, current: int, total: int) -> None:
+        print(f"{Colors.BLUE}[*] Uploading ({current}/{total}): {filename}{Colors.END}")
+
+    print(f"{Colors.BLUE}[*] Starting upload job...{Colors.END}")
+
+    try:
+        result = ingest_files(
+            api,
+            files,
+            wait_for_completion=True,
+            timeout=300,
+            progress_callback=progress
+        )
+
+        print()
+        if result['files_uploaded'] > 0:
+            print(f"{Colors.GREEN}[+] Upload complete!{Colors.END}")
+            print(f"    Files uploaded: {result['files_uploaded']}")
+            print(f"    Total size: {format_bytes(result['total_bytes'])}")
+            if result['completed']:
+                print(f"    Ingestion: Complete")
+            else:
+                print(f"    Ingestion: Pending (check BloodHound UI)")
+
+        if result['files_failed'] > 0:
+            print(f"{Colors.WARNING}[!] Failed uploads: {result['files_failed']}{Colors.END}")
+
+        for error in result['errors']:
+            print(f"{Colors.FAIL}    - {error}{Colors.END}")
+
+    except BloodHoundAPIError as e:
+        print(f"{Colors.FAIL}[!] API error: {e}{Colors.END}")
+    except Exception as e:
+        print(f"{Colors.FAIL}[!] Error: {e}{Colors.END}")
+        if config.debug_mode:
+            import traceback
+            traceback.print_exc()
+
+
+def do_clear_database(args) -> None:
+    """Handle --clear-database: Clear data from BloodHound CE database."""
+    from hackles.api.config import APIConfig
+    from hackles.api.client import BloodHoundAPI, BloodHoundAPIError
+
+    api_config = APIConfig(args.api_config)
+
+    if not api_config.has_credentials():
+        print(f"{Colors.FAIL}[!] No API credentials found. Run --auth first.{Colors.END}")
+        return
+
+    # Check if --delete-all expands to all flags
+    delete_all = args.delete_all
+    delete_ad = args.delete_ad or delete_all
+    delete_azure = args.delete_azure or delete_all
+    delete_sourceless = args.delete_sourceless or delete_all
+    delete_ingest_history = args.delete_ingest_history or delete_all
+    delete_quality_history = args.delete_quality_history or delete_all
+
+    # Require at least one deletion flag
+    if not any([delete_ad, delete_azure, delete_sourceless,
+                delete_ingest_history, delete_quality_history]):
+        print(f"{Colors.WARNING}[!] No deletion options specified.{Colors.END}")
+        print(f"    Use one or more of the following flags with --clear-database:")
+        print(f"      --delete-all             Delete everything")
+        print(f"      --delete-ad              Delete AD graph data")
+        print(f"      --delete-azure           Delete Azure graph data")
+        print(f"      --delete-sourceless      Delete sourceless graph data")
+        print(f"      --delete-ingest-history  Delete file ingest history")
+        print(f"      --delete-quality-history Delete data quality history")
+        return
+
+    # Build summary of what will be deleted
+    deletions = []
+    if delete_ad:
+        deletions.append("AD graph data")
+    if delete_azure:
+        deletions.append("Azure graph data")
+    if delete_sourceless:
+        deletions.append("Sourceless graph data")
+    if delete_ingest_history:
+        deletions.append("File ingest history")
+    if delete_quality_history:
+        deletions.append("Data quality history")
+
+    url, token_id, token_key = api_config.get_credentials()
+
+    print(f"\n{Colors.WARNING}[!] WARNING: This will permanently delete the following:{Colors.END}")
+    for item in deletions:
+        print(f"    - {item}")
+    print(f"\n    Target: {url}")
+
+    # Require confirmation unless --yes is provided
+    if not args.yes:
+        if not sys.stdout.isatty():
+            print(f"{Colors.FAIL}[!] Non-interactive mode detected. Use --yes to confirm.{Colors.END}")
+            return
+
+        try:
+            response = input(f"\n{Colors.BOLD}Type 'DELETE' to confirm: {Colors.END}").strip()
+            if response != 'DELETE':
+                print(f"{Colors.BLUE}[*] Operation cancelled.{Colors.END}")
+                return
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n{Colors.BLUE}[*] Operation cancelled.{Colors.END}")
+            return
+
+    print(f"\n{Colors.BLUE}[*] Clearing database...{Colors.END}")
+
+    try:
+        api = BloodHoundAPI(url, token_id, token_key)
+        api.clear_database(
+            delete_ad=delete_ad,
+            delete_azure=delete_azure,
+            delete_sourceless=delete_sourceless,
+            delete_ingest_history=delete_ingest_history,
+            delete_quality_history=delete_quality_history
+        )
+        print(f"{Colors.GREEN}[+] Database cleared successfully!{Colors.END}")
+
+    except BloodHoundAPIError as e:
+        print(f"{Colors.FAIL}[!] API error: {e}{Colors.END}")
+        if e.response:
+            print(f"    Response: {e.response}")
+    except Exception as e:
+        print(f"{Colors.FAIL}[!] Error: {e}{Colors.END}")
+        if config.debug_mode:
+            import traceback
+            traceback.print_exc()
+
+
 def main():
     """Main entry point for hackles CLI."""
     parser = create_parser()
@@ -367,6 +613,24 @@ def main():
                 config.abuse_vars[key.strip()] = value.strip()
             else:
                 print(f"{Colors.WARNING}[!] Invalid --abuse-var format: {var} (expected KEY=VALUE){Colors.END}")
+
+    # === BLOODHOUND CE API OPERATIONS (no Neo4j required) ===
+    if args.auth:
+        do_auth(args)
+        return
+
+    if args.ingest:
+        do_ingest(args)
+        return
+
+    if args.clear_database:
+        do_clear_database(args)
+        return
+
+    # Require password for Neo4j operations
+    if not args.password:
+        print(f"{Colors.FAIL}[!] Neo4j password required (-p/--password){Colors.END}")
+        sys.exit(1)
 
     # Helper to check if we should print status messages
     def status_print(msg: str) -> None:
@@ -472,6 +736,10 @@ def main():
                 for key, val in stats["computers"].items():
                     writer.writerow(["computers", key, val])
                 writer.writerow(["groups", "total", stats["groups"]])
+                for key, val in stats["adcs"].items():
+                    writer.writerow(["adcs", key, val])
+                writer.writerow(["domain_controllers", "total", stats["domain_controllers"]])
+                writer.writerow(["protected_users", "total", stats["protected_users"]])
                 for key, val in stats["risk"].items():
                     writer.writerow(["risk", key, val])
             else:
@@ -1390,6 +1658,165 @@ def main():
                 print(f"{Colors.BOLD}Total quick wins found: {total}{Colors.END}")
             else:
                 print(f"{Colors.GREEN}No obvious quick wins found - deeper analysis required{Colors.END}")
+            return
+
+        # === SECURITY AUDIT ===
+        if args.audit:
+            results = bh.get_audit_results(args.domain)
+
+            # Handle structured output formats
+            if config.output_format == 'json':
+                print(json.dumps(results, indent=2, default=str))
+                return
+            elif config.output_format == 'csv':
+                writer = csv.writer(sys.stdout)
+                writer.writerow(["category", "finding", "detail", "severity"])
+                for r in results.get("kerberoastable_admins", []):
+                    writer.writerow(["kerberoastable_admin", r["name"], r.get("displayname", ""), "HIGH"])
+                for r in results.get("asrep_roastable", []):
+                    writer.writerow(["asrep_roastable", r["name"], f"admin={r.get('admin', False)}", "HIGH"])
+                for r in results.get("unconstrained_delegation", []):
+                    writer.writerow(["unconstrained_delegation", r["name"], r.get("os", ""), "HIGH"])
+                for r in results.get("unsupported_os", []):
+                    writer.writerow(["unsupported_os", r["name"], r.get("os", ""), "MEDIUM"])
+                writer.writerow(["no_laps", f"{results.get('no_laps_count', 0)} computers", "", "MEDIUM"])
+                for r in results.get("guest_enabled", []):
+                    writer.writerow(["guest_enabled", r["name"], r.get("domain", ""), "HIGH"])
+                for r in results.get("pwd_never_expires_admins", []):
+                    writer.writerow(["pwd_never_expires_admin", r["name"], "", "MEDIUM"])
+                writer.writerow(["users_path_to_da", f"{results.get('users_path_to_da', 0)} users", "", "HIGH"])
+                return
+            elif config.output_format == 'html':
+                from hackles.display.report import generate_simple_html
+                flat_data = []
+                for r in results.get("kerberoastable_admins", []):
+                    flat_data.append({"category": "Kerberoastable Admin", "finding": r["name"], "detail": r.get("displayname", ""), "severity": "HIGH"})
+                for r in results.get("asrep_roastable", []):
+                    flat_data.append({"category": "AS-REP Roastable", "finding": r["name"], "detail": f"admin={r.get('admin', False)}", "severity": "HIGH"})
+                for r in results.get("unconstrained_delegation", []):
+                    flat_data.append({"category": "Unconstrained Delegation", "finding": r["name"], "detail": r.get("os", ""), "severity": "HIGH"})
+                for r in results.get("unsupported_os", []):
+                    flat_data.append({"category": "Unsupported OS", "finding": r["name"], "detail": r.get("os", ""), "severity": "MEDIUM"})
+                if results.get("no_laps_count", 0) > 0:
+                    flat_data.append({"category": "No LAPS", "finding": f"{results['no_laps_count']} computers", "detail": "", "severity": "MEDIUM"})
+                for r in results.get("guest_enabled", []):
+                    flat_data.append({"category": "Guest Enabled", "finding": r["name"], "detail": r.get("domain", ""), "severity": "HIGH"})
+                for r in results.get("pwd_never_expires_admins", []):
+                    flat_data.append({"category": "Admin Pwd Never Expires", "finding": r["name"], "detail": "", "severity": "MEDIUM"})
+                if results.get("users_path_to_da", 0) > 0:
+                    flat_data.append({"category": "Path to DA", "finding": f"{results['users_path_to_da']} users", "detail": "", "severity": "HIGH"})
+                if _html_output_path:
+                    generate_simple_html("Security Audit Report", ["category", "finding", "detail", "severity"], flat_data, _html_output_path)
+                    print(f"HTML report saved to: {_html_output_path}")
+                return
+
+            # Table output
+            print(f"\n{Colors.BOLD}{'='*70}")
+            print(f"{'SECURITY AUDIT REPORT':^70}")
+            print(f"{'='*70}{Colors.END}\n")
+
+            # Kerberoastable Admins
+            if results["kerberoastable_admins"]:
+                print(f"{Colors.FAIL}[HIGH] Kerberoastable Admin Accounts ({len(results['kerberoastable_admins'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Name", "Display Name"]
+                table.align = "l"
+                for r in results["kerberoastable_admins"]:
+                    table.add_row([r["name"], r.get("displayname", "") or ""])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No Kerberoastable admin accounts{Colors.END}\n")
+
+            # AS-REP Roastable
+            if results["asrep_roastable"]:
+                print(f"{Colors.FAIL}[HIGH] AS-REP Roastable Users ({len(results['asrep_roastable'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Name", "Admin"]
+                table.align = "l"
+                for r in results["asrep_roastable"]:
+                    table.add_row([r["name"], "Yes" if r.get("admin") else "No"])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No AS-REP roastable accounts{Colors.END}\n")
+
+            # Unconstrained Delegation
+            if results["unconstrained_delegation"]:
+                print(f"{Colors.FAIL}[HIGH] Unconstrained Delegation (non-DC) ({len(results['unconstrained_delegation'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Computer", "Operating System"]
+                table.align = "l"
+                for r in results["unconstrained_delegation"]:
+                    table.add_row([r["name"], r.get("os", "") or ""])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No non-DC systems with unconstrained delegation{Colors.END}\n")
+
+            # Unsupported OS
+            if results["unsupported_os"]:
+                print(f"{Colors.WARNING}[MEDIUM] Unsupported Operating Systems ({len(results['unsupported_os'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Computer", "Operating System"]
+                table.align = "l"
+                for r in results["unsupported_os"]:
+                    table.add_row([r["name"], r.get("os", "") or ""])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No unsupported operating systems{Colors.END}\n")
+
+            # Computers without LAPS
+            no_laps = results.get("no_laps_count", 0)
+            if no_laps > 0:
+                print(f"{Colors.WARNING}[MEDIUM] Computers without LAPS: {no_laps}{Colors.END}\n")
+            else:
+                print(f"{Colors.GREEN}[+] All enabled computers have LAPS{Colors.END}\n")
+
+            # Guest Accounts Enabled
+            if results["guest_enabled"]:
+                print(f"{Colors.FAIL}[HIGH] Guest Accounts Enabled ({len(results['guest_enabled'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Name", "Domain"]
+                table.align = "l"
+                for r in results["guest_enabled"]:
+                    table.add_row([r["name"], r.get("domain", "") or ""])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No enabled guest accounts{Colors.END}\n")
+
+            # Admin Password Never Expires
+            if results["pwd_never_expires_admins"]:
+                print(f"{Colors.WARNING}[MEDIUM] Admin Password Never Expires ({len(results['pwd_never_expires_admins'])}){Colors.END}")
+                table = PrettyTable()
+                table.field_names = ["Name"]
+                table.align = "l"
+                for r in results["pwd_never_expires_admins"]:
+                    table.add_row([r["name"]])
+                print(table)
+                print()
+            else:
+                print(f"{Colors.GREEN}[+] No admin accounts with password never expires{Colors.END}\n")
+
+            # Users with Path to DA
+            path_count = results.get("users_path_to_da", 0)
+            if path_count > 0:
+                print(f"{Colors.FAIL}[HIGH] Users with Path to Domain Admins: {path_count}{Colors.END}\n")
+            else:
+                print(f"{Colors.GREEN}[+] No users with direct path to Domain Admins{Colors.END}\n")
+
+            # Summary
+            print(f"\n{Colors.BOLD}Audit Summary:{Colors.END}")
+            print(f"  Kerberoastable Admins:      {len(results.get('kerberoastable_admins', []))}")
+            print(f"  AS-REP Roastable:           {len(results.get('asrep_roastable', []))}")
+            print(f"  Unconstrained Delegation:   {len(results.get('unconstrained_delegation', []))}")
+            print(f"  Unsupported OS:             {len(results.get('unsupported_os', []))}")
+            print(f"  Computers without LAPS:     {results.get('no_laps_count', 0)}")
+            print(f"  Guest Accounts Enabled:     {len(results.get('guest_enabled', []))}")
+            print(f"  Admin Pwd Never Expires:    {len(results.get('pwd_never_expires_admins', []))}")
+            print(f"  Users with Path to DA:      {results.get('users_path_to_da', 0)}")
             return
 
         # Validate domain if specified

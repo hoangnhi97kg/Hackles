@@ -18,8 +18,8 @@ def create_parser() -> argparse.ArgumentParser:
                            help='Neo4j Bolt URL (default: bolt://127.0.0.1:7687)')
     conn_group.add_argument('-u', '--username', default='neo4j',
                            help='Neo4j username (default: neo4j)')
-    conn_group.add_argument('-p', '--password', required=True,
-                           help='Neo4j password')
+    conn_group.add_argument('-p', '--password',
+                           help='Neo4j password (required for queries)')
     query_group = parser.add_argument_group('Query Options')
     query_group.add_argument('-d', '--domain',
                             help='Filter by domain (case-insensitive)')
@@ -122,6 +122,8 @@ def create_parser() -> argparse.ArgumentParser:
                              help='List all SPNs (service principal names)')
     filter_group.add_argument('--quick-wins', action='store_true',
                              help='Show quick win attack paths (1-2 hops to DA)')
+    filter_group.add_argument('--audit', action='store_true',
+                             help='Run consolidated security audit (hygiene checks)')
 
     # Query categories (can combine multiple)
     cat_group = parser.add_argument_group('Query Categories (combine with -a for all, or select specific)')
@@ -151,5 +153,32 @@ def create_parser() -> argparse.ArgumentParser:
                           help='Run Privilege Escalation queries')
     cat_group.add_argument('--hygiene', action='store_true',
                           help='Run Security Hygiene queries')
+
+    # BloodHound CE API operations
+    api_group = parser.add_argument_group('BloodHound CE API')
+    api_group.add_argument('--auth', action='store_true',
+                          help='Authenticate to BloodHound CE and store API token')
+    api_group.add_argument('--api-url', metavar='URL', default='http://localhost:8080',
+                          help='BloodHound CE API URL (default: http://localhost:8080)')
+    api_group.add_argument('--ingest', nargs='+', metavar='FILE',
+                          help='Ingest JSON/ZIP files into BloodHound (supports globs)')
+    api_group.add_argument('--api-config', metavar='FILE',
+                          help='Path to API config file (default: ~/.config/hackles/hackles.ini)')
+    api_group.add_argument('--clear-database', action='store_true',
+                          help='Clear data from BloodHound CE database (use with --delete-* flags)')
+    api_group.add_argument('--delete-all', action='store_true',
+                          help='Delete all data (AD + Azure + sourceless + history)')
+    api_group.add_argument('--delete-ad', action='store_true',
+                          help='Delete Active Directory graph data')
+    api_group.add_argument('--delete-azure', action='store_true',
+                          help='Delete Azure/Entra ID graph data')
+    api_group.add_argument('--delete-sourceless', action='store_true',
+                          help='Delete sourceless graph data')
+    api_group.add_argument('--delete-ingest-history', action='store_true',
+                          help='Delete file ingest history')
+    api_group.add_argument('--delete-quality-history', action='store_true',
+                          help='Delete data quality history')
+    api_group.add_argument('-y', '--yes', action='store_true',
+                          help='Skip confirmation prompt for destructive operations')
 
     return parser
