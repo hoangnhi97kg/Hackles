@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 @register_query(
     name="Azure AD SSO Account", category="Basic Info", default=True, severity=Severity.HIGH
 )
-def get_azuread_sso(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_azuread_sso(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find AZUREADSSOACC accounts (Azure Seamless SSO - high value target)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

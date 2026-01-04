@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 @register_query(
     name="ADCS ESC11 (SAN Enabled)", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_adcs_esc11(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_adcs_esc11(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """ADCS ESC11 - User-specified SAN enabled on CA"""
     domain_filter = "AND toUpper(eca.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

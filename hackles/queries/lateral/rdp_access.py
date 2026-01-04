@@ -20,9 +20,7 @@ if TYPE_CHECKING:
     default=True,
     severity=Severity.MEDIUM,
 )
-def get_rdp_access(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_rdp_access(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Get non-admin principals with RDP access"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

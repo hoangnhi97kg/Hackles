@@ -1,7 +1,6 @@
 """Tests for utility functions"""
 
 
-
 class TestExtractDomain:
     """Test extract_domain utility function."""
 

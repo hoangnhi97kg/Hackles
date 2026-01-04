@@ -16,9 +16,7 @@ if TYPE_CHECKING:
 @register_query(
     name="KRBTGT Password Age", category="Security Hygiene", default=True, severity=Severity.MEDIUM
 )
-def get_krbtgt_age(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_krbtgt_age(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """KRBTGT account password age"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

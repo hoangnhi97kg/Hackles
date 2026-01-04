@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 @register_query(
     name="ADCS - Certificate Authorities", category="ADCS", default=True, severity=Severity.INFO
 )
-def get_adcs_summary(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_adcs_summary(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Get ADCS summary (Certificate Authorities)"""
     domain_filter = "WHERE toUpper(ca.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

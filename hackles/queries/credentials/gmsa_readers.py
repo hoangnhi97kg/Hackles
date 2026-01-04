@@ -20,9 +20,7 @@ if TYPE_CHECKING:
     default=True,
     severity=Severity.HIGH,
 )
-def get_gmsa_readers(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_gmsa_readers(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Get principals with gMSA password read rights"""
     domain_filter = "AND toUpper(g.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

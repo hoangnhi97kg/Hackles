@@ -16,9 +16,7 @@ if TYPE_CHECKING:
 @register_query(
     name="Domain Statistics", category="Basic Info", default=True, severity=Severity.INFO
 )
-def get_domain_stats(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_domain_stats(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Get statistics for a domain"""
     domain_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

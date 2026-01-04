@@ -18,9 +18,7 @@ if TYPE_CHECKING:
     default=True,
     severity=Severity.MEDIUM,
 )
-def get_sql_servers(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_sql_servers(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """SQL Servers discovered via SPN enumeration"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

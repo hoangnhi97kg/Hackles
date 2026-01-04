@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 @register_query(
     name="RBCD Attack Targets", category="Delegation", default=True, severity=Severity.HIGH
 )
-def get_rbcd_targets(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_rbcd_targets(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find computers where non-admins can write msDS-AllowedToActOnBehalfOfOtherIdentity (RBCD)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

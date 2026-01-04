@@ -42,9 +42,7 @@ def get_ldap_channel_binding(
 
     if results:
         vulnerable = sum(
-            1
-            for r in results
-            if not r.get("ldap_signing") or not r.get("channel_binding")
+            1 for r in results if not r.get("ldap_signing") or not r.get("channel_binding")
         )
         if vulnerable:
             print_warning(f"[!] {vulnerable} DC(s) vulnerable to NTLM relay!")

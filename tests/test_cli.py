@@ -1,6 +1,5 @@
 """Tests for CLI argument parsing"""
 
-
 import pytest
 
 

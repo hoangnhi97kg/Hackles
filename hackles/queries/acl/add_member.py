@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 @register_query(
     name="AddMember ACL Abuse", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
-def get_add_member(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_add_member(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find non-admin principals that can add members to groups.
 
     AddMember allows adding users/computers to groups, which can be used

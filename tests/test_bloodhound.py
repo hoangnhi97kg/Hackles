@@ -1,8 +1,6 @@
 """Tests for BloodHoundCE class"""
 
 
-
-
 class TestBloodHoundCE:
     """Test BloodHoundCE class methods."""
 

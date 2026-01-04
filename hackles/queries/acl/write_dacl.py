@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 @register_query(
     name="WriteDacl ACL Abuse", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
-def get_write_dacl(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_write_dacl(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find non-admin principals with WriteDacl over other objects.
 
     WriteDacl allows modifying permissions on the target object, which can be

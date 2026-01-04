@@ -15,9 +15,7 @@ if TYPE_CHECKING:
 
 
 @register_query(name="GPOs on DC OU", category="ACL Abuse", default=True, severity=Severity.HIGH)
-def get_gpos_dc_ou(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_gpos_dc_ou(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find GPOs linked to Domain Controllers OU"""
     domain_filter = "AND toUpper(ou.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

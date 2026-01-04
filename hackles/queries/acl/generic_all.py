@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 @register_query(
     name="GenericAll ACL Abuse", category="ACL Abuse", default=True, severity=Severity.CRITICAL
 )
-def get_generic_all(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_generic_all(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find non-admin principals with GenericAll over other objects.
 
     GenericAll provides full control including password reset, group membership

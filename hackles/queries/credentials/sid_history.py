@@ -17,9 +17,7 @@ if TYPE_CHECKING:
 @register_query(
     name="SID History Abuse", category="Privilege Escalation", default=True, severity=Severity.HIGH
 )
-def get_sid_history(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_sid_history(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Find objects with SID history for privilege escalation"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

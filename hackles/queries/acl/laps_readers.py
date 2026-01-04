@@ -18,9 +18,7 @@ if TYPE_CHECKING:
 @register_query(
     name="LAPS Password Readers", category="ACL Abuse", default=True, severity=Severity.MEDIUM
 )
-def get_laps_readers(
-    bh: BloodHoundCE, domain: str | None = None, severity: Severity = None
-) -> int:
+def get_laps_readers(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
     """Get principals that can read LAPS passwords"""
     domain_filter = "WHERE toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
