@@ -8,21 +8,19 @@ from hackles.queries.base import QUERY_REGISTRY, QueryMetadata, register_query
 
 # Import all category modules to trigger decorator registration
 # These imports look unused but are required to execute @register_query decorators
-from . import (
-    acl,  # noqa: F401
-    adcs,  # noqa: F401
-    azure,  # noqa: F401
-    credentials,  # noqa: F401
-    delegation,  # noqa: F401
-    domain,  # noqa: F401
-    exchange,  # noqa: F401
-    groups,  # noqa: F401
-    hygiene,  # noqa: F401
-    lateral,  # noqa: F401
-    misc,  # noqa: F401
-    owned,  # noqa: F401
-    paths,  # noqa: F401
-)
+from . import acl  # noqa: F401
+from . import adcs  # noqa: F401
+from . import azure  # noqa: F401
+from . import credentials  # noqa: F401
+from . import delegation  # noqa: F401
+from . import domain  # noqa: F401
+from . import exchange  # noqa: F401
+from . import groups  # noqa: F401
+from . import hygiene  # noqa: F401
+from . import lateral  # noqa: F401
+from . import misc  # noqa: F401
+from . import owned  # noqa: F401
+from . import paths  # noqa: F401
 
 
 def get_query_registry():
