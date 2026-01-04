@@ -18,7 +18,7 @@ def load_abuse_templates(templates_dir: Optional[Path] = None) -> Dict[str, Any]
     Returns:
         Dictionary of abuse templates keyed by attack name
     """
-    global ABUSE_INFO, _loaded
+    global _loaded  # Only _loaded needs global (reassigned); ABUSE_INFO is modified in-place
 
     # Return cached templates if already loaded
     if _loaded and ABUSE_INFO:
