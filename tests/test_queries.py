@@ -72,6 +72,9 @@ class TestQueryFunctions:
                 "enabled": True,
                 "admincount": False,
                 "description": "Service account",
+                "spns": ["MSSQLSvc/sql01.domain.com:1433"],
+                "pwdlastset": 1704067200,
+                "pwd_age": "<1 month",
             }
         ]
 
