@@ -1,6 +1,8 @@
 """Tests for query functions"""
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestQueryRegistry:
@@ -35,12 +37,12 @@ class TestQueryRegistry:
         categories = {q[2] for q in registry}
 
         expected = [
-            'ACL Abuse',
-            'ADCS',
-            'Credentials',
-            'Delegation',
-            'Lateral Movement',
-            'Security Hygiene',
+            "ACL Abuse",
+            "ADCS",
+            "Credentials",
+            "Delegation",
+            "Lateral Movement",
+            "Security Hygiene",
         ]
         for cat in expected:
             assert cat in categories, f"Missing category: {cat}"
@@ -51,8 +53,8 @@ class TestQueryFunctions:
 
     def test_kerberoastable_query_no_results(self, mock_bh, mock_config):
         """Test kerberoastable query with no results."""
-        from hackles.queries.credentials.kerberoastable import get_kerberoastable
         from hackles.display.colors import Severity
+        from hackles.queries.credentials.kerberoastable import get_kerberoastable
 
         result = get_kerberoastable(mock_bh, None, Severity.HIGH)
         assert result == 0
@@ -60,9 +62,10 @@ class TestQueryFunctions:
 
     def test_kerberoastable_query_with_results(self, mock_config):
         """Test kerberoastable query with results."""
-        from hackles.queries.credentials.kerberoastable import get_kerberoastable
-        from hackles.display.colors import Severity
         from unittest.mock import MagicMock
+
+        from hackles.display.colors import Severity
+        from hackles.queries.credentials.kerberoastable import get_kerberoastable
 
         mock_bh = MagicMock()
         mock_bh.run_query.return_value = [
@@ -71,7 +74,7 @@ class TestQueryFunctions:
                 "displayname": "SQL Service",
                 "enabled": True,
                 "admincount": False,
-                "description": "Service account"
+                "description": "Service account",
             }
         ]
 
@@ -80,8 +83,8 @@ class TestQueryFunctions:
 
     def test_query_domain_filter(self, mock_bh, mock_config):
         """Test queries respect domain filter."""
-        from hackles.queries.credentials.kerberoastable import get_kerberoastable
         from hackles.display.colors import Severity
+        from hackles.queries.credentials.kerberoastable import get_kerberoastable
 
         get_kerberoastable(mock_bh, "DOMAIN.COM", Severity.HIGH)
 
@@ -92,7 +95,7 @@ class TestQueryFunctions:
         if len(call_args[0]) > 1:
             params = call_args[0][1]
         else:
-            params = call_args[1].get('params', {}) if call_args[1] else {}
+            params = call_args[1].get("params", {}) if call_args[1] else {}
 
 
 class TestQueryReturnValues:
@@ -100,8 +103,8 @@ class TestQueryReturnValues:
 
     def test_query_returns_int(self, mock_bh, mock_config):
         """Test queries return integer count."""
-        from hackles.queries.credentials.kerberoastable import get_kerberoastable
         from hackles.display.colors import Severity
+        from hackles.queries.credentials.kerberoastable import get_kerberoastable
 
         result = get_kerberoastable(mock_bh, None, Severity.HIGH)
         assert isinstance(result, int)

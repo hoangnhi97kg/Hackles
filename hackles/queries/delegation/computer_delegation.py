@@ -1,13 +1,14 @@
 """Computer Accounts with Dangerous Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Computer Accounts with Delegation",
     category="Delegation",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_computer_delegation(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_computer_delegation(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find computer accounts with delegation configured.
 
     Computer accounts with delegation can be abused if the computer is
@@ -57,12 +60,18 @@ def get_computer_delegation(bh: BloodHoundCE, domain: Optional[str] = None, seve
 
     if results:
         # Count dangerous types
-        unconstrained = sum(1 for r in results if r.get("unconstrained") == "Yes" and r.get("is_dc") == "No")
+        unconstrained = sum(
+            1 for r in results if r.get("unconstrained") == "Yes" and r.get("is_dc") == "No"
+        )
         non_dc = sum(1 for r in results if r.get("is_dc") == "No")
         if unconstrained > 0:
-            print_warning(f"[!] {unconstrained} non-DC computer(s) have UNCONSTRAINED delegation - critical risk!")
+            print_warning(
+                f"[!] {unconstrained} non-DC computer(s) have UNCONSTRAINED delegation - critical risk!"
+            )
         if non_dc > 0:
-            print_warning(f"[!] {non_dc} non-DC computer(s) have delegation - compromise enables impersonation!")
+            print_warning(
+                f"[!] {non_dc} non-DC computer(s) have delegation - compromise enables impersonation!"
+            )
 
         def format_targets(r):
             """Format constrained delegation targets."""
@@ -75,8 +84,16 @@ def get_computer_delegation(bh: BloodHoundCE, domain: Optional[str] = None, seve
 
         print_table(
             ["Computer", "OS", "Delegation Type", "Targets", "Is DC"],
-            [[r["computer"], r.get("os", "Unknown"), r.get("delegation_type", ""),
-              format_targets(r), r.get("is_dc", "No")] for r in results]
+            [
+                [
+                    r["computer"],
+                    r.get("os", "Unknown"),
+                    r.get("delegation_type", ""),
+                    format_targets(r),
+                    r.get("is_dc", "No"),
+                ]
+                for r in results
+            ],
         )
 
         # Different abuse info based on delegation type
@@ -84,8 +101,12 @@ def get_computer_delegation(bh: BloodHoundCE, domain: Optional[str] = None, seve
         constrained_results = [r for r in results if r.get("unconstrained") != "Yes"]
 
         if unconstrained_results:
-            print_abuse_info("UnconstrainedDelegation", unconstrained_results, extract_domain(results, domain))
+            print_abuse_info(
+                "UnconstrainedDelegation", unconstrained_results, extract_domain(results, domain)
+            )
         if constrained_results:
-            print_abuse_info("ConstrainedDelegation", constrained_results, extract_domain(results, domain))
+            print_abuse_info(
+                "ConstrainedDelegation", constrained_results, extract_domain(results, domain)
+            )
 
     return result_count

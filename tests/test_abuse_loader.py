@@ -1,6 +1,8 @@
 """Tests for abuse template loading"""
-import pytest
+
 from pathlib import Path
+
+import pytest
 
 
 class TestAbuseTemplateLoader:
@@ -27,7 +29,7 @@ class TestAbuseTemplateLoader:
         template = get_abuse_template("GenericAll")
         if template:  # Template might not exist in test env
             assert isinstance(template, dict)
-            assert 'description' in template or 'commands' in template
+            assert "description" in template or "commands" in template
 
     def test_get_abuse_template_returns_none_for_unknown(self):
         """Test get_abuse_template returns None for unknown template."""
@@ -54,10 +56,11 @@ class TestAbuseTemplateLoader:
             with open(template_file) as f:
                 data = yaml.safe_load(f)
 
-            assert 'name' in data, f"Template {template_file.name} missing 'name'"
+            assert "name" in data, f"Template {template_file.name} missing 'name'"
             # Commands or description should exist
-            assert 'commands' in data or 'description' in data, \
-                f"Template {template_file.name} missing 'commands' or 'description'"
+            assert (
+                "commands" in data or "description" in data
+            ), f"Template {template_file.name} missing 'commands' or 'description'"
 
     def test_template_count(self):
         """Test we have expected number of templates."""
@@ -78,6 +81,8 @@ class TestAbuseTemplatePlaceholders:
         for template_file in templates_dir.glob("*.yml"):
             content = template_file.read_text()
             # Check for properly formatted placeholders (not Python format strings)
-            if '<' in content:
+            if "<" in content:
                 # Should use <PLACEHOLDER> format
-                assert '<%s>' not in content, f"Template {template_file.name} uses wrong placeholder format"
+                assert (
+                    "<%s>" not in content
+                ), f"Template {template_file.name} uses wrong placeholder format"

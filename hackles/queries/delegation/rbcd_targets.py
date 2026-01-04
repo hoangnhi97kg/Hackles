@@ -1,27 +1,26 @@
 """Resource-Based Constrained Delegation Targets"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="RBCD Attack Targets",
-    category="Delegation",
-    default=True,
-    severity=Severity.HIGH
+    name="RBCD Attack Targets", category="Delegation", default=True, severity=Severity.HIGH
 )
-def get_rbcd_targets(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_rbcd_targets(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find computers where non-admins can write msDS-AllowedToActOnBehalfOfOtherIdentity (RBCD)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -58,11 +57,22 @@ def get_rbcd_targets(bh: BloodHoundCE, domain: Optional[str] = None, severity: S
         # Count unique targets
         unique_targets = len(set(r["target_computer"] for r in results))
         unique_attackers = len(set(r["principal"] for r in results))
-        print_warning(f"    {unique_attackers} principal(s) can configure RBCD on {unique_targets} computer(s)")
+        print_warning(
+            f"    {unique_attackers} principal(s) can configure RBCD on {unique_targets} computer(s)"
+        )
 
         print_table(
             ["Principal", "Type", "Target Computer", "Domain", "Enabled"],
-            [[r["principal"], r["principal_type"], r["target_computer"], r["domain"], r["enabled"]] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["principal_type"],
+                    r["target_computer"],
+                    r["domain"],
+                    r["enabled"],
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("WriteAccountRestrictions", results, extract_domain(results, domain))
 

@@ -1,4 +1,5 @@
 """Tool banner display"""
+
 from hackles.display.colors import colors
 
 

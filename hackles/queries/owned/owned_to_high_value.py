@@ -1,26 +1,26 @@
 """Owned -> High Value Targets"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader
-from hackles.display.paths import print_paths_grouped
-from hackles.core.cypher import node_type
 from hackles.core.config import config
-
+from hackles.core.cypher import node_type
+from hackles.display.colors import Severity
+from hackles.display.paths import print_paths_grouped
+from hackles.display.tables import print_header, print_subheader
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Owned -> High Value Targets",
-    category="Owned",
-    default=True,
-    severity=Severity.CRITICAL
+    name="Owned -> High Value Targets", category="Owned", default=True, severity=Severity.CRITICAL
 )
-def get_owned_to_high_value(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_owned_to_high_value(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find shortest paths from owned principals to any high value target"""
     # Rewritten to avoid cartesian product warning
     # BloodHound CE uses 'admin_tier_0' for tier zero assets

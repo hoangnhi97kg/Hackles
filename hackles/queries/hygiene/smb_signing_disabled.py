@@ -1,23 +1,23 @@
 """SMB Signing Disabled"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="SMB Signing Disabled",
-    category="Security Hygiene",
-    default=True,
-    severity=Severity.HIGH
+    name="SMB Signing Disabled", category="Security Hygiene", default=True, severity=Severity.HIGH
 )
-def get_smb_signing_disabled(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_smb_signing_disabled(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find computers with SMB signing disabled (NTLM relay targets)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -40,9 +40,6 @@ def get_smb_signing_disabled(bh: BloodHoundCE, domain: Optional[str] = None, sev
 
     if results:
         print_warning("These systems are vulnerable to NTLM relay attacks!")
-        print_table(
-            ["Computer", "Operating System"],
-            [[r["computer"], r["os"]] for r in results]
-        )
+        print_table(["Computer", "Operating System"], [[r["computer"], r["os"]] for r in results])
 
     return result_count

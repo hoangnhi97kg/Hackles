@@ -1,26 +1,26 @@
 """GenericWrite ACL Abuse"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="GenericWrite ACL Abuse",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.HIGH
+    name="GenericWrite ACL Abuse", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
-def get_generic_write(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_generic_write(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-admin principals with GenericWrite over other objects.
 
     GenericWrite allows writing to non-protected attributes including SPN
@@ -51,18 +51,31 @@ def get_generic_write(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
 
     if not print_header("GenericWrite ACL Abuse", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} GenericWrite relationship(s) from non-admin principals (limit 200)")
+    print_subheader(
+        f"Found {result_count} GenericWrite relationship(s) from non-admin principals (limit 200)"
+    )
 
     if results:
         # Count high-value targets
         admin_targets = sum(1 for r in results if r.get("target_is_admin") == "Yes")
         if admin_targets > 0:
-            print_warning(f"[!] {admin_targets} target(s) are admin accounts - targeted Kerberoasting/shadow creds!")
+            print_warning(
+                f"[!] {admin_targets} target(s) are admin accounts - targeted Kerberoasting/shadow creds!"
+            )
 
         print_table(
             ["Principal", "Type", "Target", "Target Type", "Status", "Admin"],
-            [[r["principal"], r["principal_type"], r["target"], r["target_type"],
-              r.get("target_status", "Unknown"), r.get("target_is_admin", "No")] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["principal_type"],
+                    r["target"],
+                    r["target_type"],
+                    r.get("target_status", "Unknown"),
+                    r.get("target_is_admin", "No"),
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("GenericWrite", results, extract_domain(results, domain))
 

@@ -1,26 +1,26 @@
 """ADCS Vulnerable Enrollment"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.abuse.printer import print_abuse_info
+from hackles.core.cypher import node_type
+from hackles.core.utils import extract_domain
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.cypher import node_type
-from hackles.abuse.printer import print_abuse_info
-from hackles.core.utils import extract_domain
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS Vulnerable Enrollment",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS Vulnerable Enrollment", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_vulnerable_enrollment(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_vulnerable_enrollment(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get enrollment rights on templates with enrollee supplies subject"""
     domain_filter = "AND toUpper(ct.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -48,7 +48,7 @@ def get_vulnerable_enrollment(bh: BloodHoundCE, domain: Optional[str] = None, se
     if results:
         print_table(
             ["Principal", "Type", "Template", "CA"],
-            [[r["principal"], r["type"], r["template"], r["ca"]] for r in results]
+            [[r["principal"], r["type"], r["template"], r["ca"]] for r in results],
         )
         print_abuse_info("ESC1", results, extract_domain(results, domain))
 

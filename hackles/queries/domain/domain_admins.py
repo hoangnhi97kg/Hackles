@@ -1,23 +1,21 @@
 """Domain Admins"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
-@register_query(
-    name="Domain Admins",
-    category="Basic Info",
-    default=True,
-    severity=Severity.INFO
-)
-def get_domain_admins(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+
+@register_query(name="Domain Admins", category="Basic Info", default=True, severity=Severity.INFO)
+def get_domain_admins(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get domain admins with relevant security flags"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -45,7 +43,10 @@ def get_domain_admins(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
     if results:
         print_table(
             ["Name", "Enabled", "HasSPN", "ASREP", "Unconstrained"],
-            [[r["name"], r["enabled"], r["hasspn"], r["asrep"], r["unconstrained"]] for r in results]
+            [
+                [r["name"], r["enabled"], r["hasspn"], r["asrep"], r["unconstrained"]]
+                for r in results
+            ],
         )
 
     # Check for privileged users with SPN (Kerberoastable admins)

@@ -1,12 +1,12 @@
 """Computer-to-Computer Admin Chains"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -16,9 +16,11 @@ if TYPE_CHECKING:
     name="Computer Admin Chains",
     category="Lateral Movement",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_computer_admin_chains(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_computer_admin_chains(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find computers where local admins can chain to other computers (lateral movement paths)"""
     domain_filter = "AND toUpper(c1.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -49,12 +51,17 @@ def get_computer_admin_chains(bh: BloodHoundCE, domain: Optional[str] = None, se
         # Stats
         total_reach = sum(r["computers_admin_to"] for r in results)
         max_reach = max(r["computers_admin_to"] for r in results)
-        print_warning(f"    Total: {result_count} users can reach {total_reach} computer relationships")
+        print_warning(
+            f"    Total: {result_count} users can reach {total_reach} computer relationships"
+        )
         print_warning(f"    Highest reach: {max_reach} computers from single user")
 
         print_table(
             ["User", "Enabled", "Count", "Sample Computers"],
-            [[r["user"], r["enabled"], r["computers_admin_to"], r["sample_computers"]] for r in results]
+            [
+                [r["user"], r["enabled"], r["computers_admin_to"], r["sample_computers"]]
+                for r in results
+            ],
         )
 
     return result_count

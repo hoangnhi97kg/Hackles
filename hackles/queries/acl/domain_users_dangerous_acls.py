@@ -1,24 +1,27 @@
 """Domain Users Dangerous ACLs"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Domain Users Dangerous ACLs",
     category="ACL Abuse",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_domain_users_dangerous_acls(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_domain_users_dangerous_acls(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Dangerous ACL rights held by Domain Users group"""
     domain_filter = "AND toUpper(g.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -44,7 +47,7 @@ def get_domain_users_dangerous_acls(bh: BloodHoundCE, domain: Optional[str] = No
         print_warning("[!] ANY authenticated user has these rights!")
         print_table(
             ["Edge Type", "Target Type", "Target"],
-            [[r["edge"], r["target_type"], r["target"]] for r in results]
+            [[r["edge"], r["target_type"], r["target"]] for r in results],
         )
 
     return result_count

@@ -1,24 +1,24 @@
 """Security Tools Detection"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Security Tools Detection",
-    category="Miscellaneous",
-    default=False,
-    severity=Severity.INFO
+    name="Security Tools Detection", category="Miscellaneous", default=False, severity=Severity.INFO
 )
-def get_security_tools(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_security_tools(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Security tools detected via naming conventions"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +42,7 @@ def get_security_tools(bh: BloodHoundCE, domain: Optional[str] = None, severity:
     if results:
         print_table(
             ["Security Tool", "Type", "Name"],
-            [[r["security_tool"], r["type"], r["name"]] for r in results]
+            [[r["security_tool"], r["type"], r["name"]] for r in results],
         )
 
     return result_count

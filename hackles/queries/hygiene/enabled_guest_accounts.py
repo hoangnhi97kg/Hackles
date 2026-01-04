@@ -1,23 +1,23 @@
 """Enabled Guest Accounts"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Enabled Guest Accounts",
-    category="Security Hygiene",
-    default=True,
-    severity=Severity.HIGH
+    name="Enabled Guest Accounts", category="Security Hygiene", default=True, severity=Severity.HIGH
 )
-def get_enabled_guest_accounts(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_enabled_guest_accounts(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find enabled Guest accounts"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -40,7 +40,7 @@ def get_enabled_guest_accounts(bh: BloodHoundCE, domain: Optional[str] = None, s
         print_warning("Enabled Guest accounts are a security risk!")
         print_table(
             ["Account", "Domain", "Last Logon"],
-            [[r["account"], r["domain"], r["last_logon"]] for r in results]
+            [[r["account"], r["domain"], r["last_logon"]] for r in results],
         )
 
     return result_count

@@ -1,14 +1,15 @@
 """AllExtendedRights ACL Abuse"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -18,9 +19,11 @@ if TYPE_CHECKING:
     name="AllExtendedRights ACL Abuse",
     category="ACL Abuse",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_all_extended_rights(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_all_extended_rights(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-admin principals with AllExtendedRights over other objects.
 
     AllExtendedRights grants all extended rights including:
@@ -56,7 +59,9 @@ def get_all_extended_rights(bh: BloodHoundCE, domain: Optional[str] = None, seve
 
     if not print_header("AllExtendedRights ACL Abuse", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} AllExtendedRights relationship(s) from non-admin principals (limit 200)")
+    print_subheader(
+        f"Found {result_count} AllExtendedRights relationship(s) from non-admin principals (limit 200)"
+    )
 
     if results:
         # Count high-value targets
@@ -69,13 +74,24 @@ def get_all_extended_rights(bh: BloodHoundCE, domain: Optional[str] = None, seve
             print_warning(f"[!] {t0_targets} target(s) are Tier Zero assets!")
 
         print_warning("")
-        print_warning("    AllExtendedRights includes: Password reset, DCSync, LAPS read, Cert enrollment")
+        print_warning(
+            "    AllExtendedRights includes: Password reset, DCSync, LAPS read, Cert enrollment"
+        )
 
         print_table(
             ["Principal", "Type", "Target", "Target Type", "Status", "Admin", "T0"],
-            [[r["principal"], r["principal_type"], r["target"], r["target_type"],
-              r.get("target_status", "Unknown"), r.get("target_is_admin", "No"),
-              r.get("tier_zero", "")] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["principal_type"],
+                    r["target"],
+                    r["target_type"],
+                    r.get("target_status", "Unknown"),
+                    r.get("target_is_admin", "No"),
+                    r.get("tier_zero", ""),
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("AllExtendedRights", results, extract_domain(results, domain))
 

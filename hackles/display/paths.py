@@ -1,10 +1,12 @@
 """Attack path display functions"""
-from typing import List, Dict
+
+from typing import Dict, List
+
 from prettytable import PrettyTable
+
+from hackles.core.config import config
 from hackles.display.colors import colors
 from hackles.display.tables import print_warning
-from hackles.core.config import config
-
 
 # Maximum paths to display
 MAX_PATHS_DISPLAY = 10
@@ -12,8 +14,8 @@ MAX_PATHS_DISPLAY = 10
 
 def _format_node_short(node_name: str) -> str:
     """Format a node name for compact display, removing domain suffix."""
-    if '@' in node_name:
-        return node_name.split('@')[0]
+    if "@" in node_name:
+        return node_name.split("@")[0]
     return node_name
 
 
@@ -58,7 +60,7 @@ def print_paths_grouped(results: List[Dict], max_display: int = MAX_PATHS_DISPLA
         results: List of path dictionaries from query
         max_display: Maximum number of paths to display (default 10)
     """
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     if not results:
@@ -99,7 +101,7 @@ def print_paths_grouped(results: List[Dict], max_display: int = MAX_PATHS_DISPLA
 
 def print_path(path_data: dict):
     """Pretty-print a single attack path in table format."""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     # Wrap single path in list and use grouped display
@@ -115,7 +117,7 @@ def print_paths_detailed(results: List[Dict], max_display: int = 5):
         results: List of path dictionaries from query
         max_display: Maximum number of paths to show in detail
     """
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     if not results:
@@ -142,7 +144,11 @@ def print_paths_detailed(results: List[Dict], max_display: int = 5):
 
             if node in config.owned_cache:
                 is_admin = config.owned_cache[node]
-                marker = f"{colors.FAIL}[!]{colors.END}" if is_admin else f"{colors.WARNING}[!]{colors.END}"
+                marker = (
+                    f"{colors.FAIL}[!]{colors.END}"
+                    if is_admin
+                    else f"{colors.WARNING}[!]{colors.END}"
+                )
                 print(f"      {marker} {node} {type_str}")
             else:
                 print(f"      {node} {type_str}")
@@ -159,7 +165,7 @@ def print_paths_summary(results: List[Dict]):
 
     Shows unique starting nodes and their shortest path lengths.
     """
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     if not results:
@@ -188,11 +194,6 @@ def print_paths_summary(results: List[Dict]):
 
     for start, info in sorted(by_start.items(), key=lambda x: x[1]["min_hops"]):
         source_fmt = _format_node_with_owned(start)
-        table.add_row([
-            source_fmt,
-            info["count"],
-            f"{info['min_hops']} hops",
-            len(info["targets"])
-        ])
+        table.add_row([source_fmt, info["count"], f"{info['min_hops']} hops", len(info["targets"])])
 
     print(table)

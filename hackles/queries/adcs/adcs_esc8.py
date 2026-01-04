@@ -1,23 +1,21 @@
 """ADCS ESC8 (Web Enrollment)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC8 (Web Enrollment)",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS ESC8 (Web Enrollment)", category="ADCS", default=True, severity=Severity.HIGH
 )
 def get_adcs_esc8(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """ADCS ESC8 - Web enrollment enabled (NTLM relay to ADCS)"""
@@ -40,10 +38,7 @@ def get_adcs_esc8(bh: BloodHoundCE, domain: Optional[str] = None, severity: Seve
 
     if results:
         print_warning("[!] NTLM relay to web enrollment endpoint to obtain certificates!")
-        print_table(
-            ["CA Name", "Hostname"],
-            [[r["ca"], r["host"]] for r in results]
-        )
+        print_table(["CA Name", "Hostname"], [[r["ca"], r["host"]] for r in results])
         print_abuse_info("ADCSESC8", results, extract_domain(results, domain))
 
     return result_count

@@ -1,13 +1,14 @@
 """Backup Operators Members"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Backup Operators Members",
     category="Dangerous Groups",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_backup_operators_members(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_backup_operators_members(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find members of Backup Operators group (can backup SAM/NTDS.dit)"""
     domain_filter = "AND toUpper(m.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -49,7 +52,7 @@ def get_backup_operators_members(bh: BloodHoundCE, domain: Optional[str] = None,
         print_warning("[!] Backup Operators can backup NTDS.dit and SAM -> extract all hashes!")
         print_table(
             ["Group", "Member", "Type", "Enabled"],
-            [[r["group_name"], r["member"], r["member_type"], r["enabled"]] for r in results]
+            [[r["group_name"], r["member"], r["member_type"], r["enabled"]] for r in results],
         )
         print_abuse_info("BackupOperators", results, extract_domain(results, domain))
 

@@ -1,6 +1,8 @@
 """Tests for BloodHoundCE class"""
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestBloodHoundCE:
@@ -11,23 +13,23 @@ class TestBloodHoundCE:
         from hackles.core.bloodhound import ATTACK_EDGES
 
         # Core edges
-        assert 'AdminTo' in ATTACK_EDGES
-        assert 'MemberOf' in ATTACK_EDGES
-        assert 'HasSession' in ATTACK_EDGES
+        assert "AdminTo" in ATTACK_EDGES
+        assert "MemberOf" in ATTACK_EDGES
+        assert "HasSession" in ATTACK_EDGES
 
         # ACL edges
-        assert 'GenericAll' in ATTACK_EDGES
-        assert 'GenericWrite' in ATTACK_EDGES
-        assert 'WriteDacl' in ATTACK_EDGES
-        assert 'WriteOwner' in ATTACK_EDGES
+        assert "GenericAll" in ATTACK_EDGES
+        assert "GenericWrite" in ATTACK_EDGES
+        assert "WriteDacl" in ATTACK_EDGES
+        assert "WriteOwner" in ATTACK_EDGES
 
         # ADCS edges
-        assert 'Enroll' in ATTACK_EDGES
-        assert 'ManageCA' in ATTACK_EDGES
+        assert "Enroll" in ATTACK_EDGES
+        assert "ManageCA" in ATTACK_EDGES
 
         # Delegation edges
-        assert 'AllowedToDelegate' in ATTACK_EDGES
-        assert 'AllowedToAct' in ATTACK_EDGES
+        assert "AllowedToDelegate" in ATTACK_EDGES
+        assert "AllowedToAct" in ATTACK_EDGES
 
     def test_connection_uri_parsing(self):
         """Test connection URI is stored correctly."""
@@ -75,8 +77,8 @@ class TestCypherHelpers:
         """Test node_type() generates correct CASE expression."""
         from hackles.core.cypher import node_type
 
-        result = node_type('n')
-        assert 'CASE' in result
-        assert ':User' in result
-        assert ':Computer' in result
-        assert ':Group' in result
+        result = node_type("n")
+        assert "CASE" in result
+        assert ":User" in result
+        assert ":Computer" in result
+        assert ":Group" in result

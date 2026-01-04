@@ -1,25 +1,23 @@
 """Owned Principals"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.config import config
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.cypher import node_type
-from hackles.core.config import config
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
-@register_query(
-    name="Owned Principals",
-    category="Owned",
-    default=True,
-    severity=Severity.INFO
-)
-def get_owned_principals(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+
+@register_query(name="Owned Principals", category="Owned", default=True, severity=Severity.INFO)
+def get_owned_principals(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get all owned principals (BloodHound CE uses system_tags)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     from_owned_filter = "AND toUpper(n.name) = toUpper($from_owned)" if config.from_owned else ""
@@ -54,8 +52,17 @@ def get_owned_principals(bh: BloodHoundCE, domain: Optional[str] = None, severit
     if results:
         print_table(
             ["Name", "Type", "Enabled", "Admin", "Tier Zero", "Description"],
-            [[r["name"], r["type"], r.get("enabled", "-"), r.get("admin", "-"),
-              r.get("tier_zero", "-"), r.get("description", "-")] for r in results]
+            [
+                [
+                    r["name"],
+                    r["type"],
+                    r.get("enabled", "-"),
+                    r.get("admin", "-"),
+                    r.get("tier_zero", "-"),
+                    r.get("description", "-"),
+                ]
+                for r in results
+            ],
         )
 
     return result_count

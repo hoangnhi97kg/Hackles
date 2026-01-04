@@ -1,31 +1,35 @@
 """Stale Accounts (90+ days)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+import time
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.config import config
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.config import config
-import time
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Stale Accounts (90+ days)",
     category="Security Hygiene",
     default=True,
-    severity=Severity.LOW
+    severity=Severity.LOW,
 )
-def get_stale_accounts(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_stale_accounts(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get stale user accounts (no login in configured threshold days)"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
 
     # Calculate threshold days ago in epoch
     import time
+
     threshold_days_ago = int(time.time()) - (config.stale_days * 24 * 60 * 60)
 
     query = f"""
@@ -56,15 +60,23 @@ def get_stale_accounts(bh: BloodHoundCE, domain: Optional[str] = None, severity:
         def epoch_to_date(epoch):
             if epoch and epoch > 0:
                 try:
-                    return time.strftime('%Y-%m-%d', time.localtime(epoch))
+                    return time.strftime("%Y-%m-%d", time.localtime(epoch))
                 except:
                     return "Unknown"
             return "Never"
 
         print_table(
             ["User", "Display Name", "Admin", "Last Login", "Pwd Last Set"],
-            [[r["name"], r["displayname"], r["admincount"],
-              epoch_to_date(r["lastlogon"]), epoch_to_date(r["pwdlastset"])] for r in results]
+            [
+                [
+                    r["name"],
+                    r["displayname"],
+                    r["admincount"],
+                    epoch_to_date(r["lastlogon"]),
+                    epoch_to_date(r["pwdlastset"]),
+                ]
+                for r in results
+            ],
         )
 
     return result_count

@@ -1,29 +1,28 @@
 """Query registration base classes and decorator"""
+
 from dataclasses import dataclass
-from typing import Callable, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 if TYPE_CHECKING:
     from hackles.display.colors import Severity
 
 # Global query registry - populated by @register_query decorator
-QUERY_REGISTRY: List['QueryMetadata'] = []
+QUERY_REGISTRY: List["QueryMetadata"] = []
 
 
 @dataclass
 class QueryMetadata:
     """Metadata for a registered query function"""
+
     name: str
     func: Callable
     category: str
     default: bool
-    severity: 'Severity'
+    severity: "Severity"
 
 
 def register_query(
-    name: str,
-    category: str,
-    default: bool = True,
-    severity: Optional['Severity'] = None
+    name: str, category: str, default: bool = True, severity: Optional["Severity"] = None
 ):
     """Decorator to register a query function in the global registry.
 
@@ -38,9 +37,12 @@ def register_query(
         def get_kerberoastable(bh, domain=None, severity=None):
             ...
     """
+
     def decorator(func: Callable) -> Callable:
         from hackles.display.colors import Severity as SeverityEnum
+
         sev = severity if severity is not None else SeverityEnum.MEDIUM
         QUERY_REGISTRY.append(QueryMetadata(name, func, category, default, sev))
         return func
+
     return decorator

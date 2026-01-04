@@ -1,24 +1,23 @@
 """Azure AD SSO Account (AZUREADSSOACC) Detection"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Azure AD SSO Account",
-    category="Basic Info",
-    default=True,
-    severity=Severity.HIGH
+    name="Azure AD SSO Account", category="Basic Info", default=True, severity=Severity.HIGH
 )
-def get_azuread_sso(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_azuread_sso(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find AZUREADSSOACC accounts (Azure Seamless SSO - high value target)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +41,9 @@ def get_azuread_sso(bh: BloodHoundCE, domain: Optional[str] = None, severity: Se
 
     if results:
         print_warning("[!] AZUREADSSOACC is used for Azure AD Seamless SSO!")
-        print_warning("    This account's password hash can forge Kerberos tickets for ANY Azure AD user.")
+        print_warning(
+            "    This account's password hash can forge Kerberos tickets for ANY Azure AD user."
+        )
         print()
         print("    Attack vector:")
         print("    1. Extract NTLM hash of AZUREADSSOACC$ from AD")
@@ -54,7 +55,7 @@ def get_azuread_sso(bh: BloodHoundCE, domain: Optional[str] = None, severity: Se
 
         print_table(
             ["Computer", "Domain", "Enabled", "Has SPN"],
-            [[r["computer"], r["domain"], r["enabled"], r["has_spn"]] for r in results]
+            [[r["computer"], r["domain"], r["enabled"], r["has_spn"]] for r in results],
         )
 
     return result_count

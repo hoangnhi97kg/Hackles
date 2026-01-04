@@ -1,11 +1,12 @@
 """Allowed RODC Password Replication Group Members"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,9 +16,11 @@ if TYPE_CHECKING:
     name="Allowed RODC Password Replication Group",
     category="Dangerous Groups",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_rodc_allowed_replication(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_rodc_allowed_replication(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find members of Allowed RODC Password Replication Group.
 
     Members of this group have their passwords cached on Read-Only Domain Controllers.
@@ -53,12 +56,16 @@ def get_rodc_allowed_replication(bh: BloodHoundCE, domain: Optional[str] = None,
     if results:
         admin_members = [r for r in results if r.get("admincount")]
         if admin_members:
-            print_warning("[!] CRITICAL: Privileged accounts in RODC replication group - passwords cached on RODCs!")
+            print_warning(
+                "[!] CRITICAL: Privileged accounts in RODC replication group - passwords cached on RODCs!"
+            )
         else:
-            print_warning("[*] Members have passwords cached on RODCs - review for sensitive accounts")
+            print_warning(
+                "[*] Members have passwords cached on RODCs - review for sensitive accounts"
+            )
         print_table(
             ["Member", "Type", "Enabled", "AdminCount"],
-            [[r["member"], r["member_type"], r["enabled"], r["admincount"]] for r in results]
+            [[r["member"], r["member_type"], r["enabled"], r["admincount"]] for r in results],
         )
 
     return result_count

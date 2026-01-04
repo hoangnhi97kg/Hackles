@@ -1,7 +1,8 @@
 """Risk scoring and exposure metrics"""
+
 from __future__ import annotations
 
-from typing import Any, Optional, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -141,12 +142,12 @@ def calculate_risk_score(metrics: Dict[str, Any]) -> int:
 
     # Weight factors (total should equal max_score potential)
     weights = {
-        "pct_users_with_path_to_da": 25,     # Very high risk
-        "pct_computers_without_laps": 15,    # Medium risk
-        "kerberoastable_admins": 20,         # High risk
-        "asrep_roastable": 10,               # Medium risk
+        "pct_users_with_path_to_da": 25,  # Very high risk
+        "pct_computers_without_laps": 15,  # Medium risk
+        "kerberoastable_admins": 20,  # High risk
+        "asrep_roastable": 10,  # Medium risk
         "unconstrained_delegation_non_dc": 15,  # High risk
-        "domain_admin_count": 15,            # More DAs = more attack surface
+        "domain_admin_count": 15,  # More DAs = more attack surface
     }
 
     # Path to DA (25 points max)

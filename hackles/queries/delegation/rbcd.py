@@ -1,14 +1,15 @@
 """Resource-Based Constrained Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     name="Resource-Based Constrained Delegation",
     category="Delegation",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
 def get_rbcd(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Get Resource-Based Constrained Delegation relationships"""
@@ -44,7 +45,7 @@ def get_rbcd(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity 
     if results:
         print_table(
             ["Principal", "Type", "Can Act On"],
-            [[r["principal"], r["type"], r["target"]] for r in results]
+            [[r["principal"], r["type"], r["target"]] for r in results],
         )
         print_abuse_info("RBCD", results, extract_domain(results, domain))
 

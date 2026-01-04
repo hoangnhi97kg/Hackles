@@ -1,13 +1,14 @@
 """AAD Connect with DCSync"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="AAD Connect with DCSync",
     category="Azure/Hybrid",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_azure_ad_connect_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_azure_ad_connect_dcsync(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find Azure AD Connect accounts with DCSync rights"""
     domain_filter = "AND toUpper(d.name) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -46,7 +49,7 @@ def get_azure_ad_connect_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, 
         print_warning("[!] CRITICAL: Compromise AAD Connect server to extract creds and DCSync!")
         print_table(
             ["Account", "Type", "Permission", "Target Domain"],
-            [[r["name"], r["type"], r["permission"], r["target_domain"]] for r in results]
+            [[r["name"], r["type"], r["permission"], r["target_domain"]] for r in results],
         )
         print_abuse_info("AzureADConnect", results, extract_domain(results, domain))
 

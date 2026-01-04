@@ -1,25 +1,23 @@
 """GPOs on DC OU"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
-@register_query(
-    name="GPOs on DC OU",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.HIGH
-)
-def get_gpos_dc_ou(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+@register_query(name="GPOs on DC OU", category="ACL Abuse", default=True, severity=Severity.HIGH)
+def get_gpos_dc_ou(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find GPOs linked to Domain Controllers OU"""
     domain_filter = "AND toUpper(ou.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -62,7 +60,10 @@ def get_gpos_dc_ou(bh: BloodHoundCE, domain: Optional[str] = None, severity: Sev
 
         print_table(
             ["GPO Name", "Linked To", "Controllers", "GPO Path"],
-            [[r["gpo_name"], r["linked_to"], format_controllers(r), r["gpo_path"]] for r in results]
+            [
+                [r["gpo_name"], r["linked_to"], format_controllers(r), r["gpo_path"]]
+                for r in results
+            ],
         )
         print_abuse_info("GPOAbuse", results, extract_domain(results, domain))
 

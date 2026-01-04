@@ -1,23 +1,21 @@
 """Domain Trusts"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
-@register_query(
-    name="Domain Trusts",
-    category="Basic Info",
-    default=True,
-    severity=Severity.INFO
-)
-def get_domain_trusts(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+
+@register_query(name="Domain Trusts", category="Basic Info", default=True, severity=Severity.INFO)
+def get_domain_trusts(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get domain trust relationships"""
     query = """
     MATCH (d1:Domain)-[r:TrustedBy]->(d2:Domain)
@@ -39,8 +37,16 @@ def get_domain_trusts(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
     if results:
         print_table(
             ["Trusting Domain", "Trusted Domain", "Type", "Transitive", "SID Filtering"],
-            [[r["trusting_domain"], r["trusted_domain"], r["trust_type"],
-              r["transitive"], r["sid_filtering"]] for r in results]
+            [
+                [
+                    r["trusting_domain"],
+                    r["trusted_domain"],
+                    r["trust_type"],
+                    r["transitive"],
+                    r["sid_filtering"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

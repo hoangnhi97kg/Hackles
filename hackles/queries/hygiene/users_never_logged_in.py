@@ -1,23 +1,23 @@
 """Users Never Logged In"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Users Never Logged In",
-    category="Security Hygiene",
-    default=True,
-    severity=Severity.LOW
+    name="Users Never Logged In", category="Security Hygiene", default=True, severity=Severity.LOW
 )
-def get_users_never_logged_in(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_users_never_logged_in(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find enabled users who have never logged in"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +42,7 @@ def get_users_never_logged_in(bh: BloodHoundCE, domain: Optional[str] = None, se
         print_warning("Review these accounts - they may be stale or unused")
         print_table(
             ["Name", "Display Name", "Admin", "Password Set"],
-            [[r["name"], r["display_name"], r["admin"], r["pwd_last_set"]] for r in results]
+            [[r["name"], r["display_name"], r["admin"], r["pwd_last_set"]] for r in results],
         )
 
     return result_count

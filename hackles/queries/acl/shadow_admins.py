@@ -1,25 +1,24 @@
 """Shadow Admins (Nested Indirect Privileges)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Shadow Admins (Nested)",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.HIGH
+    name="Shadow Admins (Nested)", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
-def get_shadow_admins(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_shadow_admins(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find users with indirect admin rights through nested group memberships"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -46,11 +45,13 @@ def get_shadow_admins(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
         print_warning("    They may not appear as admins in direct queries.")
 
         total_rights = sum(r["computers_admin_to"] for r in results)
-        print_warning(f"    Total: {result_count} users with {total_rights} indirect admin relationships")
+        print_warning(
+            f"    Total: {result_count} users with {total_rights} indirect admin relationships"
+        )
 
         print_table(
             ["User", "Count", "Sample Computers"],
-            [[r["user"], r["computers_admin_to"], r["sample_computers"]] for r in results]
+            [[r["user"], r["computers_admin_to"], r["sample_computers"]] for r in results],
         )
 
     return result_count

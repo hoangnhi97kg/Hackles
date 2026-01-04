@@ -1,12 +1,13 @@
 """S4U2Self with Unconstrained Delegation (Protocol Transition Attack)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -16,9 +17,11 @@ if TYPE_CHECKING:
     name="S4U2Self + Unconstrained Delegation",
     category="Delegation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_s4u2self_unconstrained(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_s4u2self_unconstrained(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find accounts with both S4U2Self (Protocol Transition) and Unconstrained Delegation.
 
     This dangerous combination allows:
@@ -53,14 +56,20 @@ def get_s4u2self_unconstrained(bh: BloodHoundCE, domain: Optional[str] = None, s
 
     if not print_header("S4U2Self + Unconstrained Delegation", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} principal(s) with Protocol Transition + Unconstrained Delegation")
+    print_subheader(
+        f"Found {result_count} principal(s) with Protocol Transition + Unconstrained Delegation"
+    )
 
     if results:
         print_warning("[!] CRITICAL: These accounts can impersonate ANY user to ANY service!")
-        print_warning("    Protocol Transition (S4U2Self) + Unconstrained Delegation = Full impersonation")
+        print_warning(
+            "    Protocol Transition (S4U2Self) + Unconstrained Delegation = Full impersonation"
+        )
         print_warning("")
         print_warning("    Attack chain:")
-        print_warning("    1. Use S4U2Self to get a forwardable TGS for target user (even 'sensitive' accounts)")
+        print_warning(
+            "    1. Use S4U2Self to get a forwardable TGS for target user (even 'sensitive' accounts)"
+        )
         print_warning("    2. S4U2Proxy is unrestricted due to unconstrained delegation")
         print_warning("    3. Present ticket to any service as the impersonated user")
         print_warning("")
@@ -81,19 +90,23 @@ def get_s4u2self_unconstrained(bh: BloodHoundCE, domain: Optional[str] = None, s
             else:
                 spn_display = str(spns) if spns else "None"
 
-            display_results.append([
-                r["principal"], r["type"], r.get("is_admin", "No"),
-                r.get("tier_zero", ""), spn_display
-            ])
+            display_results.append(
+                [
+                    r["principal"],
+                    r["type"],
+                    r.get("is_admin", "No"),
+                    r.get("tier_zero", ""),
+                    spn_display,
+                ]
+            )
 
-        print_table(
-            ["Principal", "Type", "Admin", "T0", "SPNs"],
-            display_results
-        )
+        print_table(["Principal", "Type", "Admin", "T0", "SPNs"], display_results)
 
         print()
         print("    Exploitation:")
         print("    # Get TGS for DA via S4U2Self (bypass 'sensitive' flag)")
-        print("    Rubeus.exe s4u /user:<COMPROMISED> /rc4:<HASH> /impersonateuser:Administrator /msdsspn:cifs/dc01.domain.com /ptt")
+        print(
+            "    Rubeus.exe s4u /user:<COMPROMISED> /rc4:<HASH> /impersonateuser:Administrator /msdsspn:cifs/dc01.domain.com /ptt"
+        )
 
     return result_count

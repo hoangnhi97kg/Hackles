@@ -1,12 +1,13 @@
 """WriteDACL/WriteOwner on Schema and Configuration Partitions"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -16,9 +17,11 @@ if TYPE_CHECKING:
     name="Schema/Configuration Partition Control",
     category="ACL Abuse",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_schema_config_control(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_schema_config_control(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-admin principals with WriteDACL/WriteOwner over Schema or Configuration partitions.
 
     Control over these critical AD partitions enables:
@@ -67,26 +70,45 @@ def get_schema_config_control(bh: BloodHoundCE, domain: Optional[str] = None, se
     print_subheader(f"Found {result_count} principal(s) with control over critical AD partitions")
 
     if results:
-        print_warning("[!] CRITICAL: Control over Schema/Configuration enables forest-wide attacks!")
+        print_warning(
+            "[!] CRITICAL: Control over Schema/Configuration enables forest-wide attacks!"
+        )
         print_warning("    - Schema changes affect ALL domains in the forest")
         print_warning("    - Configuration controls Sites, Subnets, and PKI objects")
         print_warning("")
 
         # Categorize by partition type
-        schema_count = sum(1 for r in results if 'SCHEMA' in r.get("target", "").upper() or
-                          'Schema' in r.get("target_dn", ""))
-        config_count = sum(1 for r in results if 'CONFIGURATION' in r.get("target", "").upper() or
-                          'Configuration' in r.get("target_dn", ""))
+        schema_count = sum(
+            1
+            for r in results
+            if "SCHEMA" in r.get("target", "").upper() or "Schema" in r.get("target_dn", "")
+        )
+        config_count = sum(
+            1
+            for r in results
+            if "CONFIGURATION" in r.get("target", "").upper()
+            or "Configuration" in r.get("target_dn", "")
+        )
 
         if schema_count > 0:
             print_warning(f"    [{schema_count}] Schema partition control - can modify AD schema!")
         if config_count > 0:
-            print_warning(f"    [{config_count}] Configuration partition control - can modify forest config!")
+            print_warning(
+                f"    [{config_count}] Configuration partition control - can modify forest config!"
+            )
 
         print_table(
             ["Principal", "Type", "Permission", "Target", "Target Type"],
-            [[r["principal"], r["principal_type"], r["permission"], r["target"],
-              r["target_type"]] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["principal_type"],
+                    r["permission"],
+                    r["target"],
+                    r["target_type"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

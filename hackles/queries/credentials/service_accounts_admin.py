@@ -1,12 +1,13 @@
 """Service Accounts with Admin Rights"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -16,9 +17,11 @@ if TYPE_CHECKING:
     name="Service Accounts with Admin Rights",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_service_accounts_admin(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_service_accounts_admin(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find service accounts with local admin rights on computers.
 
     Service accounts with admin rights are high-value targets - if compromised,
@@ -57,13 +60,22 @@ def get_service_accounts_admin(bh: BloodHoundCE, domain: Optional[str] = None, s
         # Count high-risk service accounts (admin on many machines)
         high_risk = sum(1 for r in results if r.get("computer_count", 0) >= 5)
         if high_risk:
-            print_warning(f"[!] {high_risk} service account(s) are admin on 5+ computers - high blast radius!")
+            print_warning(
+                f"[!] {high_risk} service account(s) are admin on 5+ computers - high blast radius!"
+            )
 
         print_table(
             ["Service Account", "Display Name", "Primary SPN", "# Computers", "Admin On"],
-            [[r["service_account"], r.get("display_name", ""),
-              r.get("primary_spn", ""), r["computer_count"],
-              ", ".join(r.get("admin_on_computers", [])[:5])] for r in results]
+            [
+                [
+                    r["service_account"],
+                    r.get("display_name", ""),
+                    r.get("primary_spn", ""),
+                    r["computer_count"],
+                    ", ".join(r.get("admin_on_computers", [])[:5]),
+                ]
+                for r in results
+            ],
         )
 
     return result_count

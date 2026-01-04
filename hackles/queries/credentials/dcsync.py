@@ -1,14 +1,15 @@
 """DCSync Privileges (Non-Admin)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     name="DCSync Privileges (Non-Admin)",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
 def get_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Get non-admin principals with DCSync privileges"""
@@ -51,8 +52,7 @@ def get_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severit
     if results:
         print_warning("[!] Non-admin accounts with DCSync is a critical finding!")
         print_table(
-            ["Principal", "Type", "Domain"],
-            [[r["name"], r["type"], r["domain"]] for r in results]
+            ["Principal", "Type", "Domain"], [[r["name"], r["type"], r["domain"]] for r in results]
         )
         print_abuse_info("DCSync", results, extract_domain(results, domain))
 

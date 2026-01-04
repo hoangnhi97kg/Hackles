@@ -1,11 +1,12 @@
 """Service Accounts Allowing Interactive Logon"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,9 +16,11 @@ if TYPE_CHECKING:
     name="Service Accounts with Interactive Logon",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_service_accounts_interactive(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_service_accounts_interactive(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find service accounts that can be used for interactive logon.
 
     Service accounts that allow interactive logon increase credential theft risk
@@ -56,20 +59,33 @@ def get_service_accounts_interactive(bh: BloodHoundCE, domain: Optional[str] = N
 
     if not print_header("Service Accounts with Interactive Logon", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} service account(s) with interactive logon indicators (limit 100)")
+    print_subheader(
+        f"Found {result_count} service account(s) with interactive logon indicators (limit 100)"
+    )
 
     if results:
         # Count admin service accounts with sessions
-        admin_with_sessions = sum(1 for r in results if r.get("is_admin") == "Yes" and r.get("session_count", 0) > 0)
+        admin_with_sessions = sum(
+            1 for r in results if r.get("is_admin") == "Yes" and r.get("session_count", 0) > 0
+        )
         if admin_with_sessions:
-            print_warning(f"[!] {admin_with_sessions} ADMIN service account(s) have active sessions - credential theft risk!")
+            print_warning(
+                f"[!] {admin_with_sessions} ADMIN service account(s) have active sessions - credential theft risk!"
+            )
 
         print_table(
             ["Service Account", "Display Name", "Primary SPN", "Sessions", "Admin", "RDP Groups"],
-            [[r["service_account"], r.get("display_name", ""),
-              r.get("primary_spn", ""), r.get("session_count", 0),
-              r.get("is_admin", "No"),
-              ", ".join(r.get("rdp_groups", [])[:2])] for r in results]
+            [
+                [
+                    r["service_account"],
+                    r.get("display_name", ""),
+                    r.get("primary_spn", ""),
+                    r.get("session_count", 0),
+                    r.get("is_admin", "No"),
+                    ", ".join(r.get("rdp_groups", [])[:2]),
+                ]
+                for r in results
+            ],
         )
 
     return result_count

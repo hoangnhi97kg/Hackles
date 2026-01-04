@@ -1,25 +1,28 @@
 """Coercion to Unconstrained Delegation Chain"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Coercion to Unconstrained Chain",
     category="Delegation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_coercion_chain(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_coercion_chain(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find DC -> Unconstrained Delegation attack chains for TGT capture"""
     domain_filter = "AND toUpper(dc.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -50,7 +53,7 @@ def get_coercion_chain(bh: BloodHoundCE, domain: Optional[str] = None, severity:
         print_warning("[!] DC TGT = DCSync rights = Full domain compromise!")
         print_table(
             ["Domain Controller", "Unconstrained Target", "DC OS", "Target OS"],
-            [[r["dc"], r["unconstrained_target"], r["dc_os"], r["uc_os"]] for r in results]
+            [[r["dc"], r["unconstrained_target"], r["dc_os"], r["uc_os"]] for r in results],
         )
         print()
         print("    Attack steps:")

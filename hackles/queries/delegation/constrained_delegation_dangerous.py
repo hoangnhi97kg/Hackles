@@ -1,25 +1,28 @@
 """Constrained Delegation (Dangerous SPNs)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Constrained Delegation (Dangerous SPNs)",
     category="Delegation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_constrained_delegation_dangerous(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_constrained_delegation_dangerous(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Constrained delegation to dangerous services (LDAP, CIFS, HOST on DCs)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -51,7 +54,7 @@ def get_constrained_delegation_dangerous(bh: BloodHoundCE, domain: Optional[str]
             print_warning(f"[!] {dc_count} delegate to Domain Controllers - can lead to DCSync!")
         print_table(
             ["Principal", "Target", "Delegation SPNs", "Is DC?"],
-            [[r["principal"], r["target"], r["delegation_targets"], r["is_dc"]] for r in results]
+            [[r["principal"], r["target"], r["delegation_targets"], r["is_dc"]] for r in results],
         )
         print_abuse_info("ConstrainedDelegation", results, extract_domain(results, domain))
 

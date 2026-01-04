@@ -3,6 +3,7 @@
 Stores credentials in an INI file at ~/.config/hackles/hackles.ini
 (respects XDG_CONFIG_HOME environment variable).
 """
+
 from __future__ import annotations
 
 import configparser
@@ -13,15 +14,15 @@ from typing import Optional, Tuple
 
 def get_config_dir() -> Path:
     """Get the configuration directory path, respecting XDG_CONFIG_HOME."""
-    xdg_config = os.environ.get('XDG_CONFIG_HOME')
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
     if xdg_config:
-        return Path(xdg_config) / 'hackles'
-    return Path.home() / '.config' / 'hackles'
+        return Path(xdg_config) / "hackles"
+    return Path.home() / ".config" / "hackles"
 
 
 def get_default_config_file() -> Path:
     """Get the default configuration file path."""
-    return get_config_dir() / 'hackles.ini'
+    return get_config_dir() / "hackles.ini"
 
 
 class APIConfig:
@@ -48,10 +49,10 @@ class APIConfig:
     def _load(self) -> None:
         """Load configuration from file."""
         # Set defaults
-        self._config['DEFAULT'] = {
-            'url': '',
-            'token_id': '',
-            'token_key': '',
+        self._config["DEFAULT"] = {
+            "url": "",
+            "token_id": "",
+            "token_key": "",
         }
 
         if self.config_file.exists():
@@ -61,7 +62,7 @@ class APIConfig:
         self,
         url: Optional[str] = None,
         token_id: Optional[str] = None,
-        token_key: Optional[str] = None
+        token_key: Optional[str] = None,
     ) -> None:
         """Save configuration to file.
 
@@ -72,11 +73,11 @@ class APIConfig:
         """
         # Update values if provided
         if url is not None:
-            self._config['DEFAULT']['url'] = url
+            self._config["DEFAULT"]["url"] = url
         if token_id is not None:
-            self._config['DEFAULT']['token_id'] = token_id
+            self._config["DEFAULT"]["token_id"] = token_id
         if token_key is not None:
-            self._config['DEFAULT']['token_key'] = token_key
+            self._config["DEFAULT"]["token_key"] = token_key
 
         # Create directory with restrictive permissions
         self.config_file.parent.mkdir(parents=True, exist_ok=True)
@@ -89,7 +90,7 @@ class APIConfig:
         # Use umask to ensure file is created with 0o600 permissions
         old_umask = os.umask(0o077)
         try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
+            with open(self.config_file, "w", encoding="utf-8") as f:
                 self._config.write(f)
         finally:
             os.umask(old_umask)
@@ -103,17 +104,17 @@ class APIConfig:
     @property
     def url(self) -> str:
         """Get the BloodHound CE API URL."""
-        return self._config['DEFAULT'].get('url', '')
+        return self._config["DEFAULT"].get("url", "")
 
     @property
     def token_id(self) -> str:
         """Get the API token ID."""
-        return self._config['DEFAULT'].get('token_id', '')
+        return self._config["DEFAULT"].get("token_id", "")
 
     @property
     def token_key(self) -> str:
         """Get the API token secret key."""
-        return self._config['DEFAULT'].get('token_key', '')
+        return self._config["DEFAULT"].get("token_key", "")
 
     def get_credentials(self) -> Tuple[str, str, str]:
         """Get all credentials as a tuple.

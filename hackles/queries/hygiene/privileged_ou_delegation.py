@@ -1,13 +1,13 @@
 """Privileged OU Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +17,11 @@ if TYPE_CHECKING:
     name="Privileged OU Delegation",
     category="Security Hygiene",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_privileged_ou_delegation(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_privileged_ou_delegation(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-admins with dangerous rights over OUs containing privileged objects"""
     domain_filter = "AND toUpper(ou.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -47,7 +49,9 @@ def get_privileged_ou_delegation(bh: BloodHoundCE, domain: Optional[str] = None,
 
     if results:
         print_warning("[!] Non-admins have control over privileged OUs!")
-        print_warning("    Can move/create objects, modify GPO links, or take control of OU contents")
+        print_warning(
+            "    Can move/create objects, modify GPO links, or take control of OU contents"
+        )
         print()
 
         # Count unique OUs affected
@@ -56,7 +60,10 @@ def get_privileged_ou_delegation(bh: BloodHoundCE, domain: Optional[str] = None,
 
         print_table(
             ["Principal", "Type", "Permission", "OU Name", "Domain"],
-            [[r["principal"], r["principal_type"], r["permission"], r["ou_name"], r["domain"]] for r in results]
+            [
+                [r["principal"], r["principal_type"], r["permission"], r["ou_name"], r["domain"]]
+                for r in results
+            ],
         )
 
     return result_count

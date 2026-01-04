@@ -1,11 +1,12 @@
 """Unresolved SIDs with Outbound Control"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,9 +16,11 @@ if TYPE_CHECKING:
     name="Unresolved SIDs with Outbound Control",
     category="ACL Abuse",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_unresolved_sids(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_unresolved_sids(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ACL entries with unresolved SIDs that have outbound control.
 
     Unresolved SIDs in ACLs indicate deleted accounts that still have permissions.
@@ -56,8 +59,19 @@ def get_unresolved_sids(bh: BloodHoundCE, domain: Optional[str] = None, severity
         print_warning("[*] Review and remove unnecessary ACL entries")
         print_table(
             ["Unresolved SID", "Permission", "Target", "Target Type"],
-            [[r["unresolved_sid"][:40] + "..." if len(r["unresolved_sid"]) > 40 else r["unresolved_sid"],
-              r["permission"], r["target"], r["target_type"]] for r in results]
+            [
+                [
+                    (
+                        r["unresolved_sid"][:40] + "..."
+                        if len(r["unresolved_sid"]) > 40
+                        else r["unresolved_sid"]
+                    ),
+                    r["permission"],
+                    r["target"],
+                    r["target_type"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

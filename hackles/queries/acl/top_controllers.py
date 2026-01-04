@@ -1,24 +1,24 @@
 """Top ACL Controllers"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Top ACL Controllers",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.MEDIUM
+    name="Top ACL Controllers", category="ACL Abuse", default=True, severity=Severity.MEDIUM
 )
-def get_top_controllers(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_top_controllers(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Top principals by outbound ACL control (attack surface)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -43,7 +43,10 @@ def get_top_controllers(bh: BloodHoundCE, domain: Optional[str] = None, severity
     if results:
         print_table(
             ["Principal", "Type", "Count", "Sample Targets"],
-            [[r["principal"], r["type"], r["objects_controlled"], r["sample_targets"]] for r in results]
+            [
+                [r["principal"], r["type"], r["objects_controlled"], r["sample_targets"]]
+                for r in results
+            ],
         )
 
     return result_count

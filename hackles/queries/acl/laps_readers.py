@@ -1,26 +1,26 @@
 """LAPS Password Readers"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="LAPS Password Readers",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.MEDIUM
+    name="LAPS Password Readers", category="ACL Abuse", default=True, severity=Severity.MEDIUM
 )
-def get_laps_readers(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_laps_readers(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get principals that can read LAPS passwords"""
     domain_filter = "WHERE toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -45,7 +45,7 @@ def get_laps_readers(bh: BloodHoundCE, domain: Optional[str] = None, severity: S
     if results:
         print_table(
             ["Principal", "Type", "Can Read LAPS On"],
-            [[r["principal"], r["type"], r["computer"]] for r in results]
+            [[r["principal"], r["type"], r["computer"]] for r in results],
         )
         print_abuse_info("ReadLAPSPassword", results, extract_domain(results, domain))
 

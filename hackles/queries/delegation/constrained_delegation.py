@@ -1,13 +1,14 @@
 """Constrained Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -19,18 +20,17 @@ def _targets_high_value(targets: list) -> str:
         return "No"
     for t in targets:
         t_lower = t.lower()
-        if '/dc' in t_lower or 'ldap/' in t_lower or 'cifs/' in t_lower:
+        if "/dc" in t_lower or "ldap/" in t_lower or "cifs/" in t_lower:
             return "Yes"
     return "No"
 
 
 @register_query(
-    name="Constrained Delegation",
-    category="Delegation",
-    default=True,
-    severity=Severity.MEDIUM
+    name="Constrained Delegation", category="Delegation", default=True, severity=Severity.MEDIUM
 )
-def get_constrained_delegation(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_constrained_delegation(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get users and computers with constrained delegation"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -72,15 +72,27 @@ def get_constrained_delegation(bh: BloodHoundCE, domain: Optional[str] = None, s
 
     if all_results:
         # Check for high-value targets
-        high_value_count = sum(1 for r in all_results if _targets_high_value(r.get("targets", [])) == "Yes")
+        high_value_count = sum(
+            1 for r in all_results if _targets_high_value(r.get("targets", [])) == "Yes"
+        )
         if high_value_count > 0:
-            print_warning(f"[!] {high_value_count} delegate to DC/high-value services - critical path to DA!")
+            print_warning(
+                f"[!] {high_value_count} delegate to DC/high-value services - critical path to DA!"
+            )
 
         print_table(
             ["Name", "Type", "Delegation Targets", "Enabled", "DC/High Value"],
-            [[r["name"], r["type"],
-              ", ".join(r.get("targets", [])[:3]) + ("..." if len(r.get("targets", [])) > 3 else ""),
-              r["enabled"], _targets_high_value(r.get("targets", []))] for r in all_results]
+            [
+                [
+                    r["name"],
+                    r["type"],
+                    ", ".join(r.get("targets", [])[:3])
+                    + ("..." if len(r.get("targets", [])) > 3 else ""),
+                    r["enabled"],
+                    _targets_high_value(r.get("targets", [])),
+                ]
+                for r in all_results
+            ],
         )
         print_abuse_info("ConstrainedDelegation", all_results, extract_domain(all_results, domain))
 

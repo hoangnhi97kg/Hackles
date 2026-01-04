@@ -1,23 +1,23 @@
 """Foreign Group Membership"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Foreign Group Membership",
-    category="Basic Info",
-    default=True,
-    severity=Severity.INFO
+    name="Foreign Group Membership", category="Basic Info", default=True, severity=Severity.INFO
 )
-def get_foreign_group_membership(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_foreign_group_membership(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get users from foreign domains in local groups"""
     query = """
     MATCH (u)-[:MemberOf]->(g:Group)
@@ -41,7 +41,7 @@ def get_foreign_group_membership(bh: BloodHoundCE, domain: Optional[str] = None,
         print_warning("[!] Cross-domain memberships can be leveraged for lateral movement!")
         print_table(
             ["User", "User Domain", "Member Of", "Group Domain"],
-            [[r["user"], r["user_domain"], r["group_name"], r["group_domain"]] for r in results]
+            [[r["user"], r["user_domain"], r["group_name"], r["group_domain"]] for r in results],
         )
 
     return result_count

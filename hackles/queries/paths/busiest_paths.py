@@ -1,13 +1,13 @@
 """Busiest Attack Paths Analysis"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +17,11 @@ if TYPE_CHECKING:
     name="Busiest Attack Path Nodes",
     category="Attack Paths",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_busiest_paths(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_busiest_paths(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find nodes that appear most frequently in attack paths (chokepoints)"""
     domain_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -66,7 +68,17 @@ def get_busiest_paths(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
 
         print_table(
             ["Node", "Type", "Domain", "Outbound", "Inbound", "Total"],
-            [[r["node"], r["type"], r["domain"], r["outbound_edges"], r["inbound_edges"], r["total_edges"]] for r in results]
+            [
+                [
+                    r["node"],
+                    r["type"],
+                    r["domain"],
+                    r["outbound_edges"],
+                    r["inbound_edges"],
+                    r["total_edges"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

@@ -1,26 +1,26 @@
 """ADCS ESC5 - PKI Object Control"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC5 - PKI Object Control",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS ESC5 - PKI Object Control", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_esc5_pki_object(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_esc5_pki_object(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ESC5 vulnerable configurations - control over PKI objects.
 
     ESC5 involves having dangerous permissions over PKI objects like:
@@ -55,7 +55,7 @@ def get_esc5_pki_object(bh: BloodHoundCE, domain: Optional[str] = None, severity
         print_warning("[!] Principals with dangerous permissions over Certificate Authorities")
         print_table(
             ["Principal", "Type", "Permission", "Target CA"],
-            [[r["principal"], r["type"], r["permission"], r["target"]] for r in results]
+            [[r["principal"], r["type"], r["permission"], r["target"]] for r in results],
         )
         print_abuse_info("ADCSESC5", results, extract_domain(results, domain))
 

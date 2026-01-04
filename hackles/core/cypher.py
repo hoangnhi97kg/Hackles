@@ -1,4 +1,5 @@
 """Cypher query helpers for BloodHound CE"""
+
 import re
 
 
@@ -9,7 +10,7 @@ def node_type(var: str = "n") -> str:
     check for specific labels in order of preference.
     """
     # Validate variable name to prevent Cypher injection
-    if not re.match(r'^[a-zA-Z_]\w*$', var):
+    if not re.match(r"^[a-zA-Z_]\w*$", var):
         raise ValueError(f"Invalid Cypher variable name: {var}")
     return f"""CASE
         WHEN {var}:User THEN 'User'
@@ -30,13 +31,13 @@ def node_type(var: str = "n") -> str:
 
 def owned_filter(var: str = "n") -> str:
     """Generate Cypher WHERE clause to filter for owned principals"""
-    if not re.match(r'^[a-zA-Z_]\w*$', var):
+    if not re.match(r"^[a-zA-Z_]\w*$", var):
         raise ValueError(f"Invalid Cypher variable name: {var}")
     return f"({var}:Tag_Owned OR 'owned' IN COALESCE({var}.system_tags, []) OR {var}.owned = true)"
 
 
 def tier_zero_filter(var: str = "n") -> str:
     """Generate Cypher WHERE clause to filter for Tier Zero principals"""
-    if not re.match(r'^[a-zA-Z_]\w*$', var):
+    if not re.match(r"^[a-zA-Z_]\w*$", var):
         raise ValueError(f"Invalid Cypher variable name: {var}")
     return f"({var}:Tag_Tier_Zero OR 'admin_tier_0' IN COALESCE({var}.system_tags, []))"

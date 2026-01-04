@@ -1,23 +1,23 @@
 """Duplicate SPNs"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Duplicate SPNs",
-    category="Miscellaneous",
-    default=False,
-    severity=Severity.LOW
+    name="Duplicate SPNs", category="Miscellaneous", default=False, severity=Severity.LOW
 )
-def get_duplicate_spns(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_duplicate_spns(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Duplicate SPNs (Kerberos authentication issues)"""
     query = """
     MATCH (n)
@@ -39,7 +39,7 @@ def get_duplicate_spns(bh: BloodHoundCE, domain: Optional[str] = None, severity:
         print_warning("[!] Duplicate SPNs can cause Kerberos authentication issues!")
         print_table(
             ["Duplicate SPN", "Principals"],
-            [[r["duplicate_spn"], ", ".join(r["principals"])] for r in results]
+            [[r["duplicate_spn"], ", ".join(r["principals"])] for r in results],
         )
 
     return result_count

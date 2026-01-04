@@ -1,11 +1,11 @@
 """HTML report generation for hackles"""
+
 import html
 import re
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-
-HTML_TEMPLATE = '''<!DOCTYPE html>
+HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
 <head>
     <title>Hackles Report - {date}</title>
@@ -437,7 +437,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
         }});
     </script>
 </body>
-</html>'''
+</html>"""
 
 
 def _escape_html(text) -> str:
@@ -450,8 +450,14 @@ def _escape_html(text) -> str:
         HTML-escaped string
     """
     if text is None:
-        return ''
-    return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+        return ""
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
 
 def generate_html_report(results: List[Dict[str, Any]], output_path: str) -> None:
@@ -462,26 +468,20 @@ def generate_html_report(results: List[Dict[str, Any]], output_path: str) -> Non
         output_path: Path to write HTML file
     """
     # Count findings by severity
-    severity_counts = {
-        'CRITICAL': 0,
-        'HIGH': 0,
-        'MEDIUM': 0,
-        'LOW': 0,
-        'INFO': 0
-    }
+    severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0}
 
     findings_html = []
     toc_items = []
 
     for r in results:
-        sev = r.get('severity', 'INFO')
-        count = r.get('count', 0)
+        sev = r.get("severity", "INFO")
+        count = r.get("count", 0)
 
         if count > 0:
             severity_counts[sev] += 1
 
             # Create anchor ID (alphanumeric and hyphens only)
-            anchor_id = re.sub(r'[^a-zA-Z0-9_-]', '', r['query'].lower().replace(' ', '-'))
+            anchor_id = re.sub(r"[^a-zA-Z0-9_-]", "", r["query"].lower().replace(" ", "-"))
 
             # Add to TOC
             toc_items.append(
@@ -489,68 +489,72 @@ def generate_html_report(results: List[Dict[str, Any]], output_path: str) -> Non
             )
 
             # Build table if results exist
-            result_data = r.get('results', [])
+            result_data = r.get("results", [])
             if result_data and len(result_data) > 0:
                 # Get columns from first result
                 columns = list(result_data[0].keys())
-                header_row = ''.join(f'<th>{_escape_html(c)}</th>' for c in columns)
+                header_row = "".join(f"<th>{_escape_html(c)}</th>" for c in columns)
 
                 # Limit to 100 rows for large result sets
                 display_data = result_data[:100]
                 data_row_list = []
                 for row in display_data:
-                    cells = ''.join(f'<td>{_escape_html(row.get(c, ""))}</td>' for c in columns)
-                    data_row_list.append(f'<tr>{cells}</tr>')
-                data_rows = '\n'.join(data_row_list)
+                    cells = "".join(f'<td>{_escape_html(row.get(c, ""))}</td>' for c in columns)
+                    data_row_list.append(f"<tr>{cells}</tr>")
+                data_rows = "\n".join(data_row_list)
 
-                truncation_note = ''
+                truncation_note = ""
                 if len(result_data) > 100:
-                    truncation_note = f'<p style="color: #ffc107;">Showing 100 of {len(result_data)} results</p>'
+                    truncation_note = (
+                        f'<p style="color: #ffc107;">Showing 100 of {len(result_data)} results</p>'
+                    )
 
-                table_html = f'''
+                table_html = f"""
                 <table>
                     <tr>{header_row}</tr>
                     {data_rows}
                 </table>
                 {truncation_note}
-                '''
+                """
             else:
                 table_html = f'<p class="no-findings">Found {count} item(s) - detailed data not available in report mode</p>'
 
-            findings_html.append(f'''
+            findings_html.append(
+                f"""
             <div class="finding">
                 <h3 id="{anchor_id}" class="{sev.lower()}">{_escape_html(r["query"])} ({count} finding(s))</h3>
                 <div class="finding-content">
                     {table_html}
                 </div>
             </div>
-            ''')
+            """
+            )
 
     # If no findings at all
     if not findings_html:
         findings_html.append('<p class="no-findings">No security findings detected.</p>')
-        toc_items.append('<li>No findings</li>')
+        toc_items.append("<li>No findings</li>")
 
     html_output = HTML_TEMPLATE.format(
-        date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         total_queries=len(results),
-        critical=severity_counts['CRITICAL'],
-        high=severity_counts['HIGH'],
-        medium=severity_counts['MEDIUM'],
-        low=severity_counts['LOW'],
-        info=severity_counts['INFO'],
-        toc='\n'.join(toc_items),
-        findings='\n'.join(findings_html)
+        critical=severity_counts["CRITICAL"],
+        high=severity_counts["HIGH"],
+        medium=severity_counts["MEDIUM"],
+        low=severity_counts["LOW"],
+        info=severity_counts["INFO"],
+        toc="\n".join(toc_items),
+        findings="\n".join(findings_html),
     )
 
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_output)
     except IOError as e:
         raise IOError(f"Failed to write HTML report to '{output_path}': {e}") from e
 
 
-SIMPLE_HTML_TEMPLATE = '''<!DOCTYPE html>
+SIMPLE_HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
 <head>
     <title>{title} - Hackles</title>
@@ -684,10 +688,12 @@ SIMPLE_HTML_TEMPLATE = '''<!DOCTYPE html>
         }}
     </script>
 </body>
-</html>'''
+</html>"""
 
 
-def generate_simple_html(title: str, columns: List[str], data: List[Dict[str, Any]], output_path: str) -> None:
+def generate_simple_html(
+    title: str, columns: List[str], data: List[Dict[str, Any]], output_path: str
+) -> None:
     """Generate a simple HTML table report for single-command output.
 
     Args:
@@ -697,7 +703,7 @@ def generate_simple_html(title: str, columns: List[str], data: List[Dict[str, An
         output_path: Path to write HTML file
     """
     # Build header row
-    header_row = ''.join(f'<th>{_escape_html(c)}</th>' for c in columns)
+    header_row = "".join(f"<th>{_escape_html(c)}</th>" for c in columns)
 
     # Build data rows - try multiple key formats for flexibility
     data_rows = []
@@ -708,30 +714,30 @@ def generate_simple_html(title: str, columns: List[str], data: List[Dict[str, An
             key_variants = [
                 col,
                 col.lower(),
-                col.lower().replace(' ', '_'),
+                col.lower().replace(" ", "_"),
             ]
             value = None
             for key in key_variants:
                 if key in row:
                     value = row[key]
                     break
-            cells.append(f'<td>{_escape_html(value)}</td>')
+            cells.append(f"<td>{_escape_html(value)}</td>")
         data_rows.append(f'<tr>{"".join(cells)}</tr>')
 
     # Generate filename from title
-    filename = title.lower().replace(' ', '_').replace(':', '')[:30]
+    filename = title.lower().replace(" ", "_").replace(":", "")[:30]
 
     html_output = SIMPLE_HTML_TEMPLATE.format(
         title=_escape_html(title),
-        date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         count=len(data),
         header_row=header_row,
-        data_rows='\n        '.join(data_rows),
-        filename=filename
+        data_rows="\n        ".join(data_rows),
+        filename=filename,
     )
 
     try:
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with open(output_path, "w", encoding="utf-8") as f:
             f.write(html_output)
     except IOError as e:
         raise IOError(f"Failed to write HTML report to '{output_path}': {e}") from e

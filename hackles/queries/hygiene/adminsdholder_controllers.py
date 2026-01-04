@@ -1,12 +1,13 @@
 """Non-Tier Zero Principals Controlling AdminSDHolder"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.utils import extract_domain
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.utils import extract_domain
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -16,9 +17,11 @@ if TYPE_CHECKING:
     name="Non-Tier Zero AdminSDHolder Controllers",
     category="Security Hygiene",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_adminsdholder_controllers(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_adminsdholder_controllers(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-Tier Zero principals with control over AdminSDHolder.
 
     AdminSDHolder is a critical container that propagates permissions to all
@@ -60,7 +63,7 @@ def get_adminsdholder_controllers(bh: BloodHoundCE, domain: Optional[str] = None
         print_warning("[*] Remove unnecessary permissions immediately")
         print_table(
             ["Principal", "Type", "Permission", "Domain"],
-            [[r["principal"], r["type"], r["permission"], r["domain"]] for r in results]
+            [[r["principal"], r["type"], r["permission"], r["domain"]] for r in results],
         )
 
     return result_count

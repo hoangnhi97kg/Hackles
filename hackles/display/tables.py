@@ -1,18 +1,23 @@
 """Table and header display functions"""
+
 from typing import Any, Dict, List, Optional
+
 from prettytable import PrettyTable
-from hackles.display.colors import colors, Severity
+
 from hackles.core.config import config
+from hackles.display.colors import Severity, colors
 
 
-def print_header(text: str, severity: Optional[Severity] = None, result_count: Optional[int] = None) -> bool:
+def print_header(
+    text: str, severity: Optional[Severity] = None, result_count: Optional[int] = None
+) -> bool:
     """Print a section header with optional severity indicator.
 
     Returns True if output should continue, False if quiet mode and no results,
     or if output format is not table (JSON/CSV/HTML mode).
     """
     # In non-table output modes, suppress all printing
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return False
 
     # In quiet mode, skip queries with zero results
@@ -20,10 +25,12 @@ def print_header(text: str, severity: Optional[Severity] = None, result_count: O
         return False
 
     # Show severity tag only for non-INFO levels with actual findings
-    show_severity = (severity is not None and
-                     severity != Severity.INFO and
-                     result_count is not None and
-                     result_count > 0)
+    show_severity = (
+        severity is not None
+        and severity != Severity.INFO
+        and result_count is not None
+        and result_count > 0
+    )
 
     if show_severity:
         sev_tag = f"{severity.color}[{severity.label}]{colors.END} "
@@ -35,21 +42,21 @@ def print_header(text: str, severity: Optional[Severity] = None, result_count: O
 
 def print_subheader(text: str):
     """Print a sub-section header (only in table mode)"""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
     print(f"    {colors.GREEN}{text}{colors.END}")
 
 
 def print_warning(text: str):
     """Print a warning message (only in table mode)"""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
     print(f"    {colors.WARNING}{text}{colors.END}")
 
 
 def print_severity_summary(severity_counts: Dict[Severity, int]) -> None:
     """Print summary of findings by severity level (only in table mode)."""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     # Only print if there are any findings
@@ -68,7 +75,7 @@ def print_severity_summary(severity_counts: Dict[Severity, int]) -> None:
 
 def print_table(headers: List[str], rows: List[List[Any]], max_width: int = 50) -> None:
     """Print a formatted table with owned principal highlighting (only in table mode)."""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     if not rows:
@@ -117,7 +124,7 @@ def print_table(headers: List[str], rows: List[List[Any]], max_width: int = 50) 
 
 def print_node_info(node_props: Dict[str, Any]) -> None:
     """Pretty-print node properties (only in table mode)."""
-    if config.output_format != 'table':
+    if config.output_format != "table":
         return
 
     labels = node_props.get("_labels", [])
@@ -126,8 +133,16 @@ def print_node_info(node_props: Dict[str, Any]) -> None:
     print(f"    {colors.BOLD}Properties:{colors.END}")
 
     # Show security-relevant properties first
-    priority_keys = ["name", "domain", "objectid", "enabled", "admincount",
-                     "hasspn", "dontreqpreauth", "unconstraineddelegation"]
+    priority_keys = [
+        "name",
+        "domain",
+        "objectid",
+        "enabled",
+        "admincount",
+        "hasspn",
+        "dontreqpreauth",
+        "unconstraineddelegation",
+    ]
 
     sorted_keys = []
     for key in priority_keys:
@@ -146,7 +161,9 @@ def print_node_info(node_props: Dict[str, Any]) -> None:
             if len(value) > 5:
                 value_str += f" (+{len(value)-5} more)"
         elif isinstance(value, bool):
-            value_str = f"{colors.GREEN}True{colors.END}" if value else f"{colors.FAIL}False{colors.END}"
+            value_str = (
+                f"{colors.GREEN}True{colors.END}" if value else f"{colors.FAIL}False{colors.END}"
+            )
         else:
             value_str = str(value)
 

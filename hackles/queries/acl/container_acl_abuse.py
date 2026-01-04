@@ -1,24 +1,24 @@
 """Container/OU ACL Abuse"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Container/OU ACL Abuse",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.MEDIUM
+    name="Container/OU ACL Abuse", category="ACL Abuse", default=True, severity=Severity.MEDIUM
 )
-def get_container_acl_abuse(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_container_acl_abuse(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Dangerous ACLs on OUs/Containers (inherit to child objects)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +42,7 @@ def get_container_acl_abuse(bh: BloodHoundCE, domain: Optional[str] = None, seve
         print_warning("[!] ACLs on OUs may inherit to all child objects!")
         print_table(
             ["Principal", "Type", "Permission", "OU"],
-            [[r["principal"], r["type"], r["permission"], r["ou_name"]] for r in results]
+            [[r["principal"], r["type"], r["permission"], r["ou_name"]] for r in results],
         )
 
     return result_count

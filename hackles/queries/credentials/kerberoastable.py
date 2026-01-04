@@ -1,13 +1,14 @@
 """Kerberoastable Users"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Kerberoastable Users",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_kerberoastable(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_kerberoastable(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get Kerberoastable users (hasspn=true)"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -57,16 +60,27 @@ def get_kerberoastable(bh: BloodHoundCE, domain: Optional[str] = None, severity:
     if results:
         # Highlight admin accounts and old passwords
         admin_count = sum(1 for r in results if r.get("admincount"))
-        old_pwd_count = sum(1 for r in results if r.get("pwd_age") in ['>1 year', '>6 months'])
+        old_pwd_count = sum(1 for r in results if r.get("pwd_age") in [">1 year", ">6 months"])
         if admin_count:
             print_warning(f"[!] {admin_count} are admin accounts!")
         if old_pwd_count:
-            print_warning(f"[!] {old_pwd_count} have passwords older than 6 months (easier to crack)")
+            print_warning(
+                f"[!] {old_pwd_count} have passwords older than 6 months (easier to crack)"
+            )
 
         print_table(
             ["Name", "Display Name", "Enabled", "Admin", "Pwd Age", "SPN"],
-            [[r["name"], r["displayname"], r["enabled"], r["admincount"],
-              r.get("pwd_age", "Unknown"), r["spns"]] for r in results]
+            [
+                [
+                    r["name"],
+                    r["displayname"],
+                    r["enabled"],
+                    r["admincount"],
+                    r.get("pwd_age", "Unknown"),
+                    r["spns"],
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("Kerberoasting", results, extract_domain(results, domain))
 

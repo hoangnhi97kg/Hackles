@@ -1,26 +1,26 @@
 """ADCS ESC6 - EDITF_ATTRIBUTESUBJECTALTNAME2 Flag"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC6 - SAN Flag Enabled",
-    category="ADCS",
-    default=True,
-    severity=Severity.CRITICAL
+    name="ADCS ESC6 - SAN Flag Enabled", category="ADCS", default=True, severity=Severity.CRITICAL
 )
-def get_esc6_san_flag(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_esc6_san_flag(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ESC6 vulnerable configurations - EDITF_ATTRIBUTESUBJECTALTNAME2 flag.
 
     ESC6 occurs when a CA has the EDITF_ATTRIBUTESUBJECTALTNAME2 flag enabled,
@@ -74,10 +74,21 @@ def get_esc6_san_flag(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
     print_subheader(f"Found {result_count} ESC6 path(s)")
 
     if results:
-        print_warning("[!] CA has EDITF_ATTRIBUTESUBJECTALTNAME2 flag - arbitrary SAN injection possible")
+        print_warning(
+            "[!] CA has EDITF_ATTRIBUTESUBJECTALTNAME2 flag - arbitrary SAN injection possible"
+        )
         print_table(
             ["Principal", "Type", "Certificate Authority", "Usable Templates", "Variant"],
-            [[r["principal"], r["type"], r["ca_name"], r.get("usable_templates", []), r["variant"]] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["type"],
+                    r["ca_name"],
+                    r.get("usable_templates", []),
+                    r["variant"],
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("ADCSESC6", results, extract_domain(results, domain))
 

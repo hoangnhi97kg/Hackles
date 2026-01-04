@@ -1,23 +1,26 @@
 """Computers Without LAPS"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Computers Without LAPS",
     category="Security Hygiene",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_computers_without_laps(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_computers_without_laps(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get computers without LAPS enabled"""
     domain_filter = "WHERE toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -54,8 +57,7 @@ def get_computers_without_laps(bh: BloodHoundCE, domain: Optional[str] = None, s
 
         print()
         print_table(
-            ["Computer", "Operating System"],
-            [[r["computer"], r["os"]] for r in results[:20]]
+            ["Computer", "Operating System"], [[r["computer"], r["os"]] for r in results[:20]]
         )
         if len(results) > 20:
             print_warning(f"... and {len(results) - 20} more")

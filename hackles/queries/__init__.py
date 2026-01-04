@@ -3,24 +3,27 @@
 This module imports all query category modules, which triggers the
 @register_query decorator to populate QUERY_REGISTRY.
 """
+
 from typing import List
 
 from hackles.queries.base import QUERY_REGISTRY, QueryMetadata, register_query
 
 # Import all category modules to trigger decorator registration
-from . import acl
-from . import adcs
-from . import azure
-from . import credentials
-from . import delegation
-from . import domain
-from . import exchange
-from . import groups
-from . import hygiene
-from . import lateral
-from . import misc
-from . import owned
-from . import paths
+from . import (
+    acl,
+    adcs,
+    azure,
+    credentials,
+    delegation,
+    domain,
+    exchange,
+    groups,
+    hygiene,
+    lateral,
+    misc,
+    owned,
+    paths,
+)
 
 
 def get_query_registry():
@@ -61,10 +64,10 @@ def get_query_by_name(name: str) -> QueryMetadata:
 
 
 __all__ = [
-    'QUERY_REGISTRY',
-    'QueryMetadata',
-    'register_query',
-    'get_query_registry',
-    'get_queries_by_category',
-    'get_query_by_name',
+    "QUERY_REGISTRY",
+    "QueryMetadata",
+    "register_query",
+    "get_query_registry",
+    "get_queries_by_category",
+    "get_query_by_name",
 ]

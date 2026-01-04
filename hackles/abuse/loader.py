@@ -1,7 +1,8 @@
 """YAML abuse template loader"""
+
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 # Global abuse info dictionary - populated by load_abuse_templates()
 ABUSE_INFO: Dict[str, Any] = {}
@@ -38,19 +39,22 @@ def load_abuse_templates(templates_dir: Optional[Path] = None) -> Dict[str, Any]
 
     for yaml_file in sorted(templates_dir.glob("*.yml")):
         try:
-            with open(yaml_file, 'r', encoding='utf-8') as f:
+            with open(yaml_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-                if data and 'name' in data:
+                if data and "name" in data:
                     # Validate required fields
-                    if 'commands' not in data or not data['commands']:
-                        print(f"[!] Warning: {yaml_file.name} missing 'commands' field", file=sys.stderr)
+                    if "commands" not in data or not data["commands"]:
+                        print(
+                            f"[!] Warning: {yaml_file.name} missing 'commands' field",
+                            file=sys.stderr,
+                        )
                         continue
                     # Store by name for lookup
-                    ABUSE_INFO[data['name']] = {
-                        'description': data.get('description', ''),
-                        'commands': data.get('commands', []),
-                        'opsec': data.get('opsec', []),
-                        'references': data.get('references', []),
+                    ABUSE_INFO[data["name"]] = {
+                        "description": data.get("description", ""),
+                        "commands": data.get("commands", []),
+                        "opsec": data.get("opsec", []),
+                        "references": data.get("references", []),
                     }
         except Exception as e:
             # Log malformed files to stderr

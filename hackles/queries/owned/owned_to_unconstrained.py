@@ -1,30 +1,32 @@
 """Owned -> Unconstrained Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader
-from hackles.display.paths import print_paths_grouped
 from hackles.abuse.printer import print_abuse_info
+from hackles.core.config import config
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-from hackles.core.config import config
-
+from hackles.display.colors import Severity
+from hackles.display.paths import print_paths_grouped
+from hackles.display.tables import print_header, print_subheader
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Owned -> Unconstrained Delegation",
-    category="Owned",
-    default=True,
-    severity=Severity.HIGH
+    name="Owned -> Unconstrained Delegation", category="Owned", default=True, severity=Severity.HIGH
 )
-def get_owned_to_unconstrained(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_owned_to_unconstrained(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find paths from owned principals to unconstrained delegation systems"""
-    from_owned_filter = "AND toUpper(owned.name) = toUpper($from_owned)" if config.from_owned else ""
+    from_owned_filter = (
+        "AND toUpper(owned.name) = toUpper($from_owned)" if config.from_owned else ""
+    )
     params = {"from_owned": config.from_owned} if config.from_owned else {}
 
     query = f"""

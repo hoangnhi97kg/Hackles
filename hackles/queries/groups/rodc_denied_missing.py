@@ -1,11 +1,12 @@
 """Tier Zero Not in Denied RODC Password Replication Group"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,9 +16,11 @@ if TYPE_CHECKING:
     name="Tier Zero Missing from Denied RODC Replication",
     category="Dangerous Groups",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_rodc_denied_missing(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_rodc_denied_missing(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find Tier Zero accounts NOT in Denied RODC Password Replication Group.
 
     Tier Zero accounts should be in the Denied RODC Password Replication Group
@@ -52,14 +55,18 @@ def get_rodc_denied_missing(bh: BloodHoundCE, domain: Optional[str] = None, seve
 
     if not print_header("Tier Zero Missing from Denied RODC Replication", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} Tier Zero principal(s) not in Denied RODC Password Replication Group")
+    print_subheader(
+        f"Found {result_count} Tier Zero principal(s) not in Denied RODC Password Replication Group"
+    )
 
     if results:
-        print_warning("[!] These privileged accounts could have passwords cached on compromised RODCs!")
+        print_warning(
+            "[!] These privileged accounts could have passwords cached on compromised RODCs!"
+        )
         print_warning("[*] Add to 'Denied RODC Password Replication Group' to protect")
         print_table(
             ["Principal", "Type", "Domain", "AdminCount"],
-            [[r["principal"], r["type"], r["domain"], r["admincount"]] for r in results]
+            [[r["principal"], r["type"], r["domain"], r["admincount"]] for r in results],
         )
 
     return result_count

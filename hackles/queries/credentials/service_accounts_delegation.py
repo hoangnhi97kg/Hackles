@@ -1,13 +1,14 @@
 """Service Accounts with Dangerous Delegation"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Service Accounts with Dangerous Delegation",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_service_accounts_delegation(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_service_accounts_delegation(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find service accounts with constrained delegation to high-value targets.
 
     Service accounts with delegation to Domain Admins, Domain Controllers, or
@@ -60,24 +63,41 @@ def get_service_accounts_delegation(bh: BloodHoundCE, domain: Optional[str] = No
 
     if not print_header("Service Accounts with Dangerous Delegation", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} service account(s) with delegation configured (limit 100)")
+    print_subheader(
+        f"Found {result_count} service account(s) with delegation configured (limit 100)"
+    )
 
     if results:
         # Count critical ones
         high_value_count = sum(1 for r in results if r.get("targets_high_value"))
         unconstrained_count = sum(1 for r in results if r.get("unconstrained") == "Yes")
         if high_value_count:
-            print_warning(f"[!] {high_value_count} delegate to DC/high-value services - critical risk!")
+            print_warning(
+                f"[!] {high_value_count} delegate to DC/high-value services - critical risk!"
+            )
         if unconstrained_count:
             print_warning(f"[!] {unconstrained_count} have UNCONSTRAINED delegation!")
 
         print_table(
-            ["Service Account", "Display Name", "Primary SPN", "Delegation Targets", "High Value", "Unconstrained"],
-            [[r["service_account"], r.get("display_name", ""),
-              r.get("primary_spn", ""),
-              ", ".join(r.get("delegation_targets", [])[:3]),
-              "Yes" if r.get("targets_high_value") else "No",
-              r.get("unconstrained", "No")] for r in results]
+            [
+                "Service Account",
+                "Display Name",
+                "Primary SPN",
+                "Delegation Targets",
+                "High Value",
+                "Unconstrained",
+            ],
+            [
+                [
+                    r["service_account"],
+                    r.get("display_name", ""),
+                    r.get("primary_spn", ""),
+                    ", ".join(r.get("delegation_targets", [])[:3]),
+                    "Yes" if r.get("targets_high_value") else "No",
+                    r.get("unconstrained", "No"),
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("ConstrainedDelegation", results, extract_domain(results, domain))
 

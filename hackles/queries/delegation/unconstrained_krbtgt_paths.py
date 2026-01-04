@@ -1,14 +1,15 @@
 """Unconstrained Delegation Paths to DC/KRBTGT (Golden Ticket Risk)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.display.paths import print_paths_grouped
-from hackles.core.cypher import node_type
 from hackles.core.config import config
+from hackles.core.cypher import node_type
+from hackles.display.colors import Severity
+from hackles.display.paths import print_paths_grouped
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -18,9 +19,11 @@ if TYPE_CHECKING:
     name="Unconstrained Delegation -> DC Paths",
     category="Delegation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_unconstrained_to_dc_paths(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_unconstrained_to_dc_paths(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find attack paths from Unconstrained Delegation systems to Domain Controllers.
 
     Compromising a system with unconstrained delegation allows capturing TGTs of
@@ -87,7 +90,9 @@ def get_unconstrained_to_dc_paths(bh: BloodHoundCE, domain: Optional[str] = None
 
     if not print_header("Unconstrained Delegation → DC Paths", severity, result_count):
         return result_count
-    print_subheader(f"Found {result_count} path(s) from Unconstrained Delegation to Domain Controllers")
+    print_subheader(
+        f"Found {result_count} path(s) from Unconstrained Delegation to Domain Controllers"
+    )
 
     if results:
         print_warning("[!] CRITICAL: Unconstrained delegation systems with paths to DCs!")

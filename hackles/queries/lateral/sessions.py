@@ -1,21 +1,22 @@
 """Active Sessions (Admins)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Active Sessions (Admins)",
     category="Lateral Movement",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
 def get_sessions(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Get active sessions - where are privileged users logged in"""
@@ -43,7 +44,7 @@ def get_sessions(bh: BloodHoundCE, domain: Optional[str] = None, severity: Sever
         print_warning("[!] Admin users logged in - potential credential harvesting targets!")
         print_table(
             ["Admin User", "Logged Into", "OS"],
-            [[r["user"], r["computer"], r["os"]] for r in results]
+            [[r["user"], r["computer"], r["os"]] for r in results],
         )
 
     return result_count

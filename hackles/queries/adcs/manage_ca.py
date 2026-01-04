@@ -1,23 +1,21 @@
 """ADCS ManageCA Rights (ESC7)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ManageCA Rights (ESC7)",
-    category="ADCS",
-    default=True,
-    severity=Severity.CRITICAL
+    name="ADCS ManageCA Rights (ESC7)", category="ADCS", default=True, severity=Severity.CRITICAL
 )
 def get_manage_ca(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Find non-admin principals with ManageCA rights (ESC7)"""
@@ -44,7 +42,7 @@ def get_manage_ca(bh: BloodHoundCE, domain: Optional[str] = None, severity: Seve
         print_warning("ManageCA allows enabling vulnerable templates or approving requests!")
         print_table(
             ["Principal", "Type", "Certificate Authority"],
-            [[r["principal"], r["type"], r["ca"]] for r in results]
+            [[r["principal"], r["type"], r["ca"]] for r in results],
         )
         print_abuse_info("ADCSESC7", results, domain)
 

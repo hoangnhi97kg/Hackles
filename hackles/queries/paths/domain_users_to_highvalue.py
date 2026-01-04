@@ -1,26 +1,29 @@
 """Domain Users -> High Value"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_warning
-from hackles.display.paths import print_paths_grouped
-from hackles.core.cypher import node_type
 from hackles.core.config import config
-
+from hackles.core.cypher import node_type
+from hackles.display.colors import Severity
+from hackles.display.paths import print_paths_grouped
+from hackles.display.tables import print_header, print_subheader, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Domain Users -> High Value",
     category="Attack Paths",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_domain_users_to_highvalue(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_domain_users_to_highvalue(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Shortest paths from Domain Users group to high value targets"""
     domain_filter = "AND toUpper(g.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}

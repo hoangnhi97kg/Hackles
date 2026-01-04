@@ -1,25 +1,28 @@
 """Shadow Credentials (AddKeyCredentialLink)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Shadow Credentials (AddKeyCredentialLink)",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_shadow_credentials(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_shadow_credentials(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get principals with AddKeyCredentialLink rights (Shadow Credentials)"""
     domain_filter = "AND toUpper(target.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +45,7 @@ def get_shadow_credentials(bh: BloodHoundCE, domain: Optional[str] = None, sever
     if results:
         print_table(
             ["Principal", "Type", "Target", "Target Type"],
-            [[r["principal"], r["type"], r["target"], r["target_type"]] for r in results]
+            [[r["principal"], r["type"], r["target"], r["target_type"]] for r in results],
         )
         print_abuse_info("ShadowCredentials", results, domain)
 

@@ -1,4 +1,5 @@
 """Shell completion for hackles CLI"""
+
 import argparse
 
 
@@ -22,6 +23,7 @@ def setup_completion(parser: argparse.ArgumentParser) -> None:
     """
     try:
         import argcomplete
+
         argcomplete.autocomplete(parser)
     except ImportError:
         # argcomplete not installed, skip completion setup

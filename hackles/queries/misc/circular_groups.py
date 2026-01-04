@@ -1,23 +1,23 @@
 """Circular Group Memberships"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Circular Group Memberships",
-    category="Miscellaneous",
-    default=True,
-    severity=Severity.LOW
+    name="Circular Group Memberships", category="Miscellaneous", default=True, severity=Severity.LOW
 )
-def get_circular_groups(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_circular_groups(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find circular group memberships (misconfigurations)"""
     domain_filter = "AND toUpper(g.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +42,7 @@ def get_circular_groups(bh: BloodHoundCE, domain: Optional[str] = None, severity
         print_warning("Circular group memberships are misconfigurations that should be fixed!")
         print_table(
             ["Group", "Cycle Path", "Cycle Length"],
-            [[r["group_name"], r["cycle_path"], r["cycle_length"]] for r in results]
+            [[r["group_name"], r["cycle_path"], r["cycle_length"]] for r in results],
         )
 
     return result_count

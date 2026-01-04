@@ -1,13 +1,14 @@
 """Multi-hop Delegation Chains to High-Value Targets"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Delegation Chains to High-Value",
     category="Delegation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_delegation_chains(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_delegation_chains(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find multi-hop delegation chains that reach high-value targets.
 
     Identifies principals that can delegate to services which can then
@@ -66,12 +69,22 @@ def get_delegation_chains(bh: BloodHoundCE, domain: Optional[str] = None, severi
         # Count non-admin sources (more dangerous)
         non_admin = sum(1 for r in results if r.get("source_is_admin") == "No")
         if non_admin > 0:
-            print_warning(f"[!] {non_admin} chain(s) start from non-admin principals - privilege escalation paths!")
+            print_warning(
+                f"[!] {non_admin} chain(s) start from non-admin principals - privilege escalation paths!"
+            )
 
         print_table(
             ["Source", "Type", "Delegation Target", "Reaches DC", "Source Admin"],
-            [[r["source"], r["source_type"], r["delegation_target"],
-              r["reaches_dc"], r.get("source_is_admin", "No")] for r in results]
+            [
+                [
+                    r["source"],
+                    r["source_type"],
+                    r["delegation_target"],
+                    r["reaches_dc"],
+                    r.get("source_is_admin", "No"),
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("ConstrainedDelegation", results, extract_domain(results, domain))
 

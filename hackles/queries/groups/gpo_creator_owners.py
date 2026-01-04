@@ -1,25 +1,25 @@
 """GPO Creator Owners"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="GPO Creator Owners",
-    category="Dangerous Groups",
-    default=True,
-    severity=Severity.MEDIUM
+    name="GPO Creator Owners", category="Dangerous Groups", default=True, severity=Severity.MEDIUM
 )
-def get_gpo_creator_owners(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_gpo_creator_owners(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find members of Group Policy Creator Owners"""
     domain_filter = "AND toUpper(m.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -48,7 +48,7 @@ def get_gpo_creator_owners(bh: BloodHoundCE, domain: Optional[str] = None, sever
     if results:
         print_table(
             ["Group", "Member", "Type", "Enabled"],
-            [[r["group_name"], r["member"], r["member_type"], r["enabled"]] for r in results]
+            [[r["group_name"], r["member"], r["member_type"], r["enabled"]] for r in results],
         )
         print_abuse_info("GPOAbuse", results, extract_domain(results, domain))
 

@@ -1,23 +1,26 @@
 """Service Accounts Unprotected"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Service Accounts Unprotected",
     category="Security Hygiene",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_service_accounts_unprotected(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_service_accounts_unprotected(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Service accounts NOT in Protected Users group"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -43,7 +46,7 @@ def get_service_accounts_unprotected(bh: BloodHoundCE, domain: Optional[str] = N
     if results:
         print_table(
             ["Service Account", "Description"],
-            [[r["service_account"], r["description"]] for r in results]
+            [[r["service_account"], r["description"]] for r in results],
         )
 
     return result_count

@@ -1,23 +1,23 @@
 """Cross-Domain Sessions"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Cross-Domain Sessions",
-    category="Attack Paths",
-    default=True,
-    severity=Severity.LOW
+    name="Cross-Domain Sessions", category="Attack Paths", default=True, severity=Severity.LOW
 )
-def get_cross_domain_sessions(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_cross_domain_sessions(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find sessions crossing domain boundaries"""
     query = """
     MATCH (c:Computer)-[:HasSession]->(u:User)
@@ -36,7 +36,7 @@ def get_cross_domain_sessions(bh: BloodHoundCE, domain: Optional[str] = None, se
         print_warning("Cross-domain sessions may allow lateral movement between domains!")
         print_table(
             ["Computer", "Computer Domain", "User", "User Domain"],
-            [[r["computer"], r["computer_domain"], r["user"], r["user_domain"]] for r in results]
+            [[r["computer"], r["computer_domain"], r["user"], r["user_domain"]] for r in results],
         )
 
     return result_count

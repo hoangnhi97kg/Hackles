@@ -1,26 +1,26 @@
 """ADCS ESC13 - Issuance Policy Abuse"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC13 - Issuance Policy Abuse",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS ESC13 - Issuance Policy Abuse", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_esc13_issuance_policy(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_esc13_issuance_policy(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ESC13 vulnerable configurations - issuance policy linked to group.
 
     ESC13 exploits certificate templates with issuance policies linked to
@@ -49,10 +49,20 @@ def get_esc13_issuance_policy(bh: BloodHoundCE, domain: Optional[str] = None, se
     print_subheader(f"Found {result_count} ESC13 path(s) (limit 100)")
 
     if results:
-        print_warning("[!] Certificate enrollment grants membership to linked groups via issuance policy")
+        print_warning(
+            "[!] Certificate enrollment grants membership to linked groups via issuance policy"
+        )
         print_table(
             ["Principal", "Type", "Linked Group", "High Value"],
-            [[r["principal"], r["type"], r["linked_group"], "Yes" if r.get("high_value") else "No"] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["type"],
+                    r["linked_group"],
+                    "Yes" if r.get("high_value") else "No",
+                ]
+                for r in results
+            ],
         )
         print_abuse_info("ADCSESC13", results, extract_domain(results, domain))
 

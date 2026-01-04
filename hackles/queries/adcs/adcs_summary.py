@@ -1,23 +1,23 @@
 """ADCS - Certificate Authorities"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS - Certificate Authorities",
-    category="ADCS",
-    default=True,
-    severity=Severity.INFO
+    name="ADCS - Certificate Authorities", category="ADCS", default=True, severity=Severity.INFO
 )
-def get_adcs_summary(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_adcs_summary(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get ADCS summary (Certificate Authorities)"""
     domain_filter = "WHERE toUpper(ca.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -40,8 +40,7 @@ def get_adcs_summary(bh: BloodHoundCE, domain: Optional[str] = None, severity: S
 
     if results:
         print_table(
-            ["Name", "Domain", "CA Name"],
-            [[r["name"], r["domain"], r["caname"]] for r in results]
+            ["Name", "Domain", "CA Name"], [[r["name"], r["domain"], r["caname"]] for r in results]
         )
 
     return result_count

@@ -1,13 +1,13 @@
 """Cross-Domain Ownership"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +17,11 @@ if TYPE_CHECKING:
     name="Cross-Domain Object Ownership",
     category="Basic Info",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_cross_domain_ownership(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_cross_domain_ownership(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find objects owned by principals from different domains"""
     query = f"""
     MATCH (owner)-[:Owns]->(target)
@@ -49,7 +51,16 @@ def get_cross_domain_ownership(bh: BloodHoundCE, domain: Optional[str] = None, s
 
         print_table(
             ["Owner", "Owner Domain", "Target Object", "Target Domain", "Type"],
-            [[r["owner"], r["owner_domain"], r["target_object"], r["target_domain"], r["target_type"]] for r in results]
+            [
+                [
+                    r["owner"],
+                    r["owner_domain"],
+                    r["target_object"],
+                    r["target_domain"],
+                    r["target_type"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

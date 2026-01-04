@@ -1,30 +1,32 @@
 """Owned -> ADCS Templates"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader
-from hackles.display.paths import print_paths_grouped
 from hackles.abuse.printer import print_abuse_info
+from hackles.core.config import config
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-from hackles.core.config import config
-
+from hackles.display.colors import Severity
+from hackles.display.paths import print_paths_grouped
+from hackles.display.tables import print_header, print_subheader
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Owned -> ADCS Templates",
-    category="Owned",
-    default=True,
-    severity=Severity.HIGH
+    name="Owned -> ADCS Templates", category="Owned", default=True, severity=Severity.HIGH
 )
-def get_owned_to_adcs(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_owned_to_adcs(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find paths from owned principals to ADCS escalation (ESC1, ESC4, etc.)"""
-    from_owned_filter = "AND toUpper(owned.name) = toUpper($from_owned)" if config.from_owned else ""
+    from_owned_filter = (
+        "AND toUpper(owned.name) = toUpper($from_owned)" if config.from_owned else ""
+    )
     params = {"from_owned": config.from_owned} if config.from_owned else {}
 
     query = f"""
@@ -62,7 +64,15 @@ def get_owned_to_adcs(bh: BloodHoundCE, domain: Optional[str] = None, severity: 
     if results:
         print_paths_grouped(results)
         # Extract info for abuse templates
-        abuse_data = [{"principal": r["nodes"][0], "template": r.get("template"), "ca": r.get("ca")} for r in results if r.get("nodes")]
-        print_abuse_info("ADCSESC1", abuse_data, extract_domain([{"name": r["nodes"][0]} for r in results if r.get("nodes")], None))
+        abuse_data = [
+            {"principal": r["nodes"][0], "template": r.get("template"), "ca": r.get("ca")}
+            for r in results
+            if r.get("nodes")
+        ]
+        print_abuse_info(
+            "ADCSESC1",
+            abuse_data,
+            extract_domain([{"name": r["nodes"][0]} for r in results if r.get("nodes")], None),
+        )
 
     return result_count

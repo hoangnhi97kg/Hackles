@@ -1,24 +1,23 @@
 """Users with Paths to Domain Admin"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Users with Paths to DA",
-    category="Security Hygiene",
-    default=True,
-    severity=Severity.HIGH
+    name="Users with Paths to DA", category="Security Hygiene", default=True, severity=Severity.HIGH
 )
-def get_users_path_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_users_path_to_da(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Calculate percentage and list of users with attack paths to Domain Admins"""
     domain_filter = "WHERE toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -55,7 +54,9 @@ def get_users_path_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severit
 
     if total_users > 0:
         percentage = (result_count / total_users) * 100
-        print_subheader(f"{result_count} of {total_users} users ({percentage:.1f}%) have paths to DA")
+        print_subheader(
+            f"{result_count} of {total_users} users ({percentage:.1f}%) have paths to DA"
+        )
     else:
         print_subheader(f"Found {result_count} user(s) with paths to DA")
 
@@ -80,7 +81,7 @@ def get_users_path_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severit
 
         print_table(
             ["User", "Domain", "Admin Flag", "Hops to DA"],
-            [[r["user"], r["domain"], r["is_admin"], r["hops_to_da"]] for r in results]
+            [[r["user"], r["domain"], r["is_admin"], r["hops_to_da"]] for r in results],
         )
 
     return result_count

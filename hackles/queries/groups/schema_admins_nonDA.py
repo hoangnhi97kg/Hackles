@@ -1,13 +1,14 @@
 """Schema/Enterprise Admins (Non-DA)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -17,9 +18,11 @@ if TYPE_CHECKING:
     name="Schema/Enterprise Admins (Non-DA)",
     category="Dangerous Groups",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_schema_admins_nonDA(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_schema_admins_nonDA(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find Schema/Enterprise Admins who aren't Domain Admins (forest-level privileges)"""
     domain_filter = "AND toUpper(m.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -51,7 +54,7 @@ def get_schema_admins_nonDA(bh: BloodHoundCE, domain: Optional[str] = None, seve
         print_warning("[!] These accounts have FOREST-LEVEL privileges but may be overlooked!")
         print_table(
             ["Member", "Type", "High Priv Group", "Enabled"],
-            [[r["member"], r["member_type"], r["high_priv_group"], r["enabled"]] for r in results]
+            [[r["member"], r["member_type"], r["high_priv_group"], r["enabled"]] for r in results],
         )
         print_abuse_info("SchemaAdmin", results, extract_domain(results, domain))
 

@@ -1,26 +1,26 @@
 """ADCS ESC4 - Template ACL Vulnerabilities"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC4 - Template ACL Abuse",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS ESC4 - Template ACL Abuse", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_esc4_template_acl(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_esc4_template_acl(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ESC4 vulnerable configurations - principals with write access to certificate templates.
 
     ESC4 allows attackers with write permissions to certificate templates to modify
@@ -51,7 +51,10 @@ def get_esc4_template_acl(bh: BloodHoundCE, domain: Optional[str] = None, severi
         print_warning("[!] Principals can modify certificate templates to enable ESC1/ESC2/ESC3")
         print_table(
             ["Principal", "Type", "Template", "Display Name"],
-            [[r["principal"], r["type"], r["template"], r.get("display_name", "")] for r in results]
+            [
+                [r["principal"], r["type"], r["template"], r.get("display_name", "")]
+                for r in results
+            ],
         )
         print_abuse_info("ADCSESC4", results, extract_domain(results, domain))
 

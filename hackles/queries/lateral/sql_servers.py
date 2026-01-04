@@ -1,23 +1,26 @@
 """SQL Servers (SPN Discovery)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="SQL Servers (SPN Discovery)",
     category="Lateral Movement",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
-def get_sql_servers(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_sql_servers(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """SQL Servers discovered via SPN enumeration"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -37,9 +40,6 @@ def get_sql_servers(bh: BloodHoundCE, domain: Optional[str] = None, severity: Se
     print_subheader(f"Found {result_count} SQL server(s)")
 
     if results:
-        print_table(
-            ["Computer", "OS"],
-            [[r["computer"], r["os"]] for r in results]
-        )
+        print_table(["Computer", "OS"], [[r["computer"], r["os"]] for r in results])
 
     return result_count

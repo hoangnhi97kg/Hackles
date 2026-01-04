@@ -1,11 +1,12 @@
 """Users with Logon Scripts in Trusted Domains"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,9 +16,11 @@ if TYPE_CHECKING:
     name="Logon Scripts in Trusted Domains",
     category="Security Hygiene",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_logon_scripts_foreign(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_logon_scripts_foreign(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find users with logon scripts stored in a different domain.
 
     Logon scripts in trusted domains create a cross-domain attack path.
@@ -27,6 +30,10 @@ def get_logon_scripts_foreign(bh: BloodHoundCE, domain: Optional[str] = None, se
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
 
+    # Note: Backslash escaping for Cypher in Python f-strings:
+    # - Python '\\\\' sends '\\' to Cypher, which equals one literal backslash
+    # - To match UNC path '\\server', Cypher needs '\\\\' (two backslashes)
+    # - So Python needs '\\\\\\\\' (8 backslashes) for two literal backslashes
     query = f"""
     MATCH (u:User)
     WHERE u.scriptpath IS NOT NULL
@@ -35,8 +42,8 @@ def get_logon_scripts_foreign(bh: BloodHoundCE, domain: Optional[str] = None, se
     AND u.enabled = true
     WITH u,
         CASE
-            WHEN u.scriptpath STARTS WITH '\\\\'
-            THEN split(substring(u.scriptpath, 2), '\\')[0]
+            WHEN u.scriptpath STARTS WITH '\\\\\\\\'
+            THEN split(substring(u.scriptpath, 2), '\\\\')[0]
             ELSE null
         END AS script_host
     WHERE script_host IS NOT NULL
@@ -60,7 +67,7 @@ def get_logon_scripts_foreign(bh: BloodHoundCE, domain: Optional[str] = None, se
         print_warning("[*] Compromising the script server allows code execution at logon")
         print_table(
             ["User", "Domain", "Script Path", "Script Server"],
-            [[r["user"], r["user_domain"], r["script_path"], r["script_server"]] for r in results]
+            [[r["user"], r["user_domain"], r["script_path"], r["script_server"]] for r in results],
         )
 
     return result_count

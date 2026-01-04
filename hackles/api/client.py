@@ -1,4 +1,5 @@
 """BloodHound CE API client for file uploads and authentication."""
+
 from __future__ import annotations
 
 import json
@@ -14,7 +15,9 @@ from hackles.api.auth import build_auth_headers
 class BloodHoundAPIError(Exception):
     """Exception raised for BloodHound API errors."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None, response: Optional[str] = None):
+    def __init__(
+        self, message: str, status_code: Optional[int] = None, response: Optional[str] = None
+    ):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
@@ -44,7 +47,7 @@ def _parse_json_response(response: requests.Response) -> Any:
         raise BloodHoundAPIError(
             f"Invalid JSON response: {e}",
             status_code=response.status_code,
-            response=response.text[:500] if response.text else None
+            response=response.text[:500] if response.text else None,
         ) from e
 
 
@@ -63,7 +66,7 @@ class BloodHoundAPI:
             token_key: API token secret key
         """
         # Normalize URL
-        self.base_url = url.rstrip('/')
+        self.base_url = url.rstrip("/")
         self.token_id = token_id
         self.token_key = token_key
         # Use session for connection pooling
@@ -74,8 +77,8 @@ class BloodHoundAPI:
         method: str,
         endpoint: str,
         body: Optional[bytes] = None,
-        content_type: str = 'application/json',
-        timeout: int = 30
+        content_type: str = "application/json",
+        timeout: int = 30,
     ) -> requests.Response:
         """Make an authenticated request to the BloodHound API.
 
@@ -96,16 +99,12 @@ class BloodHoundAPI:
 
         # Build authentication headers
         headers = build_auth_headers(method, endpoint, self.token_id, self.token_key, body)
-        headers['Content-Type'] = content_type
-        headers['User-Agent'] = 'hackles/1.0'
+        headers["Content-Type"] = content_type
+        headers["User-Agent"] = "hackles/1.0"
 
         try:
             response = self._session.request(
-                method=method,
-                url=url,
-                headers=headers,
-                data=body,
-                timeout=timeout
+                method=method, url=url, headers=headers, data=body, timeout=timeout
             )
             return response
         except requests.RequestException as e:
@@ -118,7 +117,7 @@ class BloodHoundAPI:
             True if connection and authentication successful
         """
         try:
-            response = self._request('GET', '/api/v2/self')
+            response = self._request("GET", "/api/v2/self")
             return response.status_code == 200
         except BloodHoundAPIError:
             return False
@@ -132,12 +131,10 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If request fails
         """
-        response = self._request('GET', '/api/v2/self')
+        response = self._request("GET", "/api/v2/self")
         if response.status_code != 200:
             raise BloodHoundAPIError(
-                "Failed to get user info",
-                status_code=response.status_code,
-                response=response.text
+                "Failed to get user info", status_code=response.status_code, response=response.text
             )
         return _parse_json_response(response)
 
@@ -150,29 +147,25 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If request fails or job ID not returned
         """
-        response = self._request('POST', '/api/v2/file-upload/start')
+        response = self._request("POST", "/api/v2/file-upload/start")
         if response.status_code not in (200, 201):
             raise BloodHoundAPIError(
                 "Failed to start upload job",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
         data = _parse_json_response(response)
-        job_id = data.get('data', {}).get('id')
+        job_id = data.get("data", {}).get("id")
         if not job_id:
             raise BloodHoundAPIError(
                 "Failed to get job ID from API response",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
         return str(job_id)
 
     def upload_file(
-        self,
-        job_id: str,
-        filename: str,
-        content: bytes,
-        content_type: str = 'application/json'
+        self, job_id: str, filename: str, content: bytes, content_type: str = "application/json"
     ) -> None:
         """Upload a file to an existing upload job.
 
@@ -185,19 +178,19 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If upload fails
         """
-        endpoint = f'/api/v2/file-upload/{job_id}'
+        endpoint = f"/api/v2/file-upload/{job_id}"
         response = self._request(
-            'POST',
+            "POST",
             endpoint,
             body=content,
             content_type=content_type,
-            timeout=300  # Longer timeout for file uploads
+            timeout=300,  # Longer timeout for file uploads
         )
         if response.status_code not in (200, 201, 202):
             raise BloodHoundAPIError(
                 f"Failed to upload file {filename}",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
 
     def end_upload_job(self, job_id: str) -> None:
@@ -209,13 +202,13 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If request fails
         """
-        endpoint = f'/api/v2/file-upload/{job_id}/end'
-        response = self._request('POST', endpoint)
+        endpoint = f"/api/v2/file-upload/{job_id}/end"
+        response = self._request("POST", endpoint)
         if response.status_code not in (200, 201, 202):
             raise BloodHoundAPIError(
                 f"Failed to end upload job",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
 
     def get_upload_job_status(self, job_id: str) -> Dict[str, Any]:
@@ -231,27 +224,25 @@ class BloodHoundAPI:
             BloodHoundAPIError: If request fails
         """
         # Use query filter to get specific job from list endpoint
-        endpoint = f'/api/v2/file-upload?id=eq:{job_id}'
-        response = self._request('GET', endpoint)
+        endpoint = f"/api/v2/file-upload?id=eq:{job_id}"
+        response = self._request("GET", endpoint)
         if response.status_code != 200:
             raise BloodHoundAPIError(
-                "Failed to get job status",
-                status_code=response.status_code,
-                response=response.text
+                "Failed to get job status", status_code=response.status_code, response=response.text
             )
         result = _parse_json_response(response)
         # Return first matching job or empty structure
-        jobs = result.get('data', [])
+        jobs = result.get("data", [])
         if jobs:
-            return {'data': jobs[0]}
-        return {'data': {}}
+            return {"data": jobs[0]}
+        return {"data": {}}
 
     def wait_for_ingestion(
         self,
         job_id: str,
         timeout: int = 300,
         poll_interval: int = 5,
-        callback: Optional[Callable[[Dict[str, Any]], None]] = None
+        callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> bool:
         """Wait for ingestion to complete.
 
@@ -278,13 +269,13 @@ class BloodHoundAPI:
                 if callback:
                     callback(status)
 
-                job_status = status.get('data', {}).get('status', '')
+                job_status = status.get("data", {}).get("status", "")
 
                 # Check for completion states
-                if job_status in ('complete', 'completed', 'ingested'):
+                if job_status in ("complete", "completed", "ingested"):
                     return True
-                if job_status in ('failed', 'error'):
-                    error_msg = status.get('data', {}).get('status_message', 'Unknown error')
+                if job_status in ("failed", "error"):
+                    error_msg = status.get("data", {}).get("status_message", "Unknown error")
                     raise BloodHoundAPIError(f"Ingestion failed: {error_msg}")
 
                 time.sleep(poll_interval)
@@ -304,7 +295,7 @@ class BloodHoundAPI:
         delete_azure: bool = False,
         delete_sourceless: bool = False,
         delete_ingest_history: bool = False,
-        delete_quality_history: bool = False
+        delete_quality_history: bool = False,
     ) -> None:
         """Clear data from the BloodHound database.
 
@@ -337,24 +328,22 @@ class BloodHoundAPI:
             "deleteSourceKinds": source_kinds,
             "deleteAssetGroupSelectors": [],
             "deleteFileIngestHistory": delete_ingest_history,
-            "deleteDataQualityHistory": delete_quality_history
+            "deleteDataQualityHistory": delete_quality_history,
         }
 
-        body_bytes = json.dumps(body).encode('utf-8')
+        body_bytes = json.dumps(body).encode("utf-8")
 
         response = self._request(
-            'POST',
-            '/api/v2/clear-database',
+            "POST",
+            "/api/v2/clear-database",
             body=body_bytes,
-            content_type='application/json',
-            timeout=120  # Deletion can take time
+            content_type="application/json",
+            timeout=120,  # Deletion can take time
         )
 
         if response.status_code != 204:
             raise BloodHoundAPIError(
-                "Failed to clear database",
-                status_code=response.status_code,
-                response=response.text
+                "Failed to clear database", status_code=response.status_code, response=response.text
             )
 
     def get_file_upload_jobs(self) -> Dict[str, Any]:
@@ -366,12 +355,12 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If request fails
         """
-        response = self._request('GET', '/api/v2/file-upload')
+        response = self._request("GET", "/api/v2/file-upload")
         if response.status_code != 200:
             raise BloodHoundAPIError(
                 "Failed to get file upload jobs",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
         return _parse_json_response(response)
 
@@ -387,12 +376,12 @@ class BloodHoundAPI:
         Raises:
             BloodHoundAPIError: If request fails
         """
-        endpoint = f'/api/v2/file-upload/{job_id}/completed-tasks'
-        response = self._request('GET', endpoint)
+        endpoint = f"/api/v2/file-upload/{job_id}/completed-tasks"
+        response = self._request("GET", endpoint)
         if response.status_code != 200:
             raise BloodHoundAPIError(
                 "Failed to get file upload tasks",
                 status_code=response.status_code,
-                response=response.text
+                response=response.text,
             )
         return _parse_json_response(response)

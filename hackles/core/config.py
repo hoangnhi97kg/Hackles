@@ -1,4 +1,5 @@
 """Global configuration and state management for Hackles"""
+
 import threading
 from pathlib import Path
 from typing import Dict, Optional, Set
@@ -19,15 +20,15 @@ class Config:
         self._show_abuse: bool = False
         self._debug_mode: bool = False
         self._no_color: bool = False
-        self._output_format: str = 'table'  # table, json, csv, html
+        self._output_format: str = "table"  # table, json, csv, html
         self._severity_filter: Set[str] = set()  # Empty = all severities
         self._show_progress: bool = False
         # User input enhancements
         self._from_owned: Optional[str] = None  # Filter owned queries to specific principal
-        self._abuse_vars: Dict[str, str] = {}   # User-provided abuse template variables
-        self._stale_days: int = 90              # Threshold for stale accounts
-        self._max_path_depth: int = 5           # Max hops in path queries
-        self._max_paths: int = 25               # Max paths to return
+        self._abuse_vars: Dict[str, str] = {}  # User-provided abuse template variables
+        self._stale_days: int = 90  # Threshold for stale accounts
+        self._max_path_depth: int = 5  # Max hops in path queries
+        self._max_paths: int = 25  # Max paths to return
 
     @property
     def owned_cache(self) -> Dict[str, bool]:
@@ -182,8 +183,8 @@ class Config:
                 with open(path) as f:
                     for line in f:
                         line = line.strip()
-                        if line and not line.startswith('#') and '=' in line:
-                            key, value = line.split('=', 1)
+                        if line and not line.startswith("#") and "=" in line:
+                            key, value = line.split("=", 1)
                             self._abuse_vars[key.strip()] = value.strip()
 
     def reset(self):
@@ -194,7 +195,7 @@ class Config:
             self._show_abuse = False
             self._debug_mode = False
             self._no_color = False
-            self._output_format = 'table'
+            self._output_format = "table"
             self._severity_filter = set()
             self._show_progress = False
             # Reset user input enhancements

@@ -5,6 +5,7 @@ BloodHound uses a 3-stage HMAC-SHA256 chain for request signing:
 2. DateKey: HMAC(op_key, datetime[:13])  # Hourly precision prevents replay
 3. Signature: HMAC(date_key, body)
 """
+
 from __future__ import annotations
 
 import base64
@@ -19,7 +20,7 @@ def generate_signature(
     uri: str,
     token_key: str,
     body: Optional[bytes] = None,
-    request_datetime: Optional[str] = None
+    request_datetime: Optional[str] = None,
 ) -> Tuple[str, str]:
     """Generate HMAC signature for BloodHound CE API request.
 
@@ -35,11 +36,11 @@ def generate_signature(
     """
     # Get current datetime in ISO8601 format
     if request_datetime is None:
-        request_datetime = datetime.now().astimezone().isoformat('T')
+        request_datetime = datetime.now().astimezone().isoformat("T")
 
     # Stage 1: Operation key - combines method and URI
     digester = hmac.new(token_key.encode(), None, hashlib.sha256)
-    digester.update(f'{method}{uri}'.encode())
+    digester.update(f"{method}{uri}".encode())
 
     # Stage 2: Date key - hourly precision to prevent replay attacks
     digester = hmac.new(digester.digest(), None, hashlib.sha256)
@@ -55,11 +56,7 @@ def generate_signature(
 
 
 def build_auth_headers(
-    method: str,
-    uri: str,
-    token_id: str,
-    token_key: str,
-    body: Optional[bytes] = None
+    method: str, uri: str, token_id: str, token_key: str, body: Optional[bytes] = None
 ) -> Dict[str, str]:
     """Build authentication headers for BloodHound CE API request.
 
@@ -76,7 +73,7 @@ def build_auth_headers(
     signature, request_datetime = generate_signature(method, uri, token_key, body)
 
     return {
-        'Authorization': f'bhesignature {token_id}',
-        'RequestDate': request_datetime,
-        'Signature': signature,
+        "Authorization": f"bhesignature {token_id}",
+        "RequestDate": request_datetime,
+        "Signature": signature,
     }

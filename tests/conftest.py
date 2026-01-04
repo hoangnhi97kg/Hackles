@@ -1,6 +1,8 @@
 """Pytest fixtures for hackles tests"""
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -64,7 +66,7 @@ def sample_path_results():
             "nodes": ["USER@DOMAIN.COM", "GROUP@DOMAIN.COM", "DC01.DOMAIN.COM"],
             "node_types": ["User", "Group", "Computer"],
             "relationships": ["MemberOf", "AdminTo"],
-            "path_length": 2
+            "path_length": 2,
         }
     ]
 
@@ -72,12 +74,12 @@ def sample_path_results():
 @pytest.fixture
 def mock_config():
     """Mock config module for testing."""
-    with patch('hackles.core.config.config') as mock:
+    with patch("hackles.core.config.config") as mock:
         mock.quiet_mode = False
         mock.show_abuse = False
         mock.debug_mode = False
         mock.no_color = True
-        mock.output_format = 'table'
+        mock.output_format = "table"
         mock.owned_cache = {}
         mock.severity_filter = None
         mock.show_progress = False

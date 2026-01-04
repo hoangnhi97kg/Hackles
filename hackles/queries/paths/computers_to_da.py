@@ -1,26 +1,25 @@
 """Computers with Paths to Domain Admin"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.config import config
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.core.cypher import node_type
-from hackles.core.config import config
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Computers with Paths to DA",
-    category="Attack Paths",
-    default=True,
-    severity=Severity.HIGH
+    name="Computers with Paths to DA", category="Attack Paths", default=True, severity=Severity.HIGH
 )
-def get_computers_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_computers_to_da(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find computers that have attack paths to Domain Admins"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -58,7 +57,7 @@ def get_computers_to_da(bh: BloodHoundCE, domain: Optional[str] = None, severity
 
         print_table(
             ["Computer", "OS", "Unconstrained Delegation", "Hops to DA"],
-            [[r["computer"], r["os"], r["unconstrained"], r["hops_to_da"]] for r in results]
+            [[r["computer"], r["os"], r["unconstrained"], r["hops_to_da"]] for r in results],
         )
 
     return result_count

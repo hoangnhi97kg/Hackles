@@ -1,25 +1,28 @@
 """NTLM Relay Targets (SMB Signing)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="NTLM Relay Targets (SMB Signing)",
     category="Lateral Movement",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_ntlm_relay_targets(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_ntlm_relay_targets(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """NTLM relay opportunities - computers with admin rights to SMB signing disabled targets"""
     domain_filter = "WHERE toUpper(c1.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -41,7 +44,7 @@ def get_ntlm_relay_targets(bh: BloodHoundCE, domain: Optional[str] = None, sever
         print_warning("[!] Coerce source → Relay to target (SMB signing disabled)!")
         print_table(
             ["Source Computer", "Relay Target", "OS"],
-            [[r["source"], r["relay_target"], r["os"]] for r in results]
+            [[r["source"], r["relay_target"], r["os"]] for r in results],
         )
         print_abuse_info("NTLMRelay", results, extract_domain(results, domain))
 

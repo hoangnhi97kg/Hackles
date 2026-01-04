@@ -1,4 +1,5 @@
 """Shared utility functions for hackles"""
+
 from typing import Dict, List, Optional
 
 
@@ -19,8 +20,8 @@ def extract_domain(results: List[Dict], domain: Optional[str] = None) -> Optiona
     if not results:
         return None
     for r in results:
-        for field in ['name', 'principal', 'user', 'computer', 'target']:
-            name = r.get(field, '')
-            if name and '@' in name:
-                return name.split('@')[-1]
+        for field in ["name", "principal", "user", "computer", "target"]:
+            name = r.get(field, "")
+            if name and "@" in name:
+                return name.split("@")[-1]
     return None

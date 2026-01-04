@@ -1,7 +1,9 @@
 """Tests for configuration singleton"""
-import pytest
+
 import threading
 from concurrent.futures import ThreadPoolExecutor
+
+import pytest
 
 
 class TestConfigDefaults:
@@ -40,7 +42,7 @@ class TestConfigDefaults:
         from hackles.core.config import Config
 
         cfg = Config()
-        assert cfg.output_format == 'table'
+        assert cfg.output_format == "table"
 
     def test_default_severity_filter(self):
         """Test severity_filter defaults to empty set."""
@@ -104,7 +106,7 @@ class TestConfigSetters:
         from hackles.core.config import Config
 
         cfg = Config()
-        for fmt in ['table', 'json', 'csv', 'html']:
+        for fmt in ["table", "json", "csv", "html"]:
             cfg.output_format = fmt
             assert cfg.output_format == fmt
 
@@ -113,8 +115,8 @@ class TestConfigSetters:
         from hackles.core.config import Config
 
         cfg = Config()
-        cfg.severity_filter = {'CRITICAL', 'HIGH'}
-        assert cfg.severity_filter == {'CRITICAL', 'HIGH'}
+        cfg.severity_filter = {"CRITICAL", "HIGH"}
+        assert cfg.severity_filter == {"CRITICAL", "HIGH"}
 
     def test_set_show_progress(self):
         """Test setting show_progress."""
@@ -129,7 +131,7 @@ class TestConfigSetters:
         from hackles.core.config import Config
 
         cfg = Config()
-        cache = {'USER@DOMAIN.COM': True, 'ADMIN@DOMAIN.COM': True}
+        cache = {"USER@DOMAIN.COM": True, "ADMIN@DOMAIN.COM": True}
         cfg.owned_cache = cache
         assert cfg.owned_cache == cache
 
@@ -148,10 +150,10 @@ class TestConfigReset:
         cfg.show_abuse = True
         cfg.debug_mode = True
         cfg.no_color = True
-        cfg.output_format = 'json'
-        cfg.severity_filter = {'CRITICAL'}
+        cfg.output_format = "json"
+        cfg.severity_filter = {"CRITICAL"}
         cfg.show_progress = True
-        cfg.owned_cache = {'USER@DOMAIN.COM': True}
+        cfg.owned_cache = {"USER@DOMAIN.COM": True}
 
         # Reset
         cfg.reset()
@@ -161,7 +163,7 @@ class TestConfigReset:
         assert cfg.show_abuse is False
         assert cfg.debug_mode is False
         assert cfg.no_color is False
-        assert cfg.output_format == 'table'
+        assert cfg.output_format == "table"
         assert cfg.severity_filter == set()
         assert cfg.show_progress is False
         assert cfg.owned_cache == {}
@@ -216,14 +218,14 @@ class TestConfigThreadSafety:
         from hackles.core.config import Config
 
         cfg = Config()
-        counter = {'value': 0}
+        counter = {"value": 0}
 
         def increment_cache():
             for i in range(100):
                 current = cfg.owned_cache.copy()
-                current[f'USER{threading.current_thread().name}_{i}'] = True
+                current[f"USER{threading.current_thread().name}_{i}"] = True
                 cfg.owned_cache = current
-                counter['value'] += 1
+                counter["value"] += 1
 
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(increment_cache) for _ in range(5)]
@@ -231,7 +233,7 @@ class TestConfigThreadSafety:
                 f.result()
 
         # Should have processed all increments without error
-        assert counter['value'] == 500
+        assert counter["value"] == 500
 
     def test_concurrent_read_write(self):
         """Test concurrent reads and writes work correctly."""
@@ -251,8 +253,8 @@ class TestConfigThreadSafety:
         def writer():
             try:
                 for i in range(100):
-                    cfg.debug_mode = (i % 2 == 0)
-                    cfg.output_format = 'json' if i % 2 == 0 else 'table'
+                    cfg.debug_mode = i % 2 == 0
+                    cfg.output_format = "json" if i % 2 == 0 else "table"
             except Exception as e:
                 errors.append(e)
 

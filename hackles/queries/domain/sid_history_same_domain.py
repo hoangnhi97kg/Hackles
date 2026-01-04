@@ -1,25 +1,25 @@
 """SID History (Same Domain)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="SID History (Same Domain)",
-    category="Basic Info",
-    default=True,
-    severity=Severity.HIGH
+    name="SID History (Same Domain)", category="Basic Info", default=True, severity=Severity.HIGH
 )
-def get_sid_history_same_domain(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_sid_history_same_domain(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """SID History within same domain (persistence mechanism)"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -42,7 +42,7 @@ def get_sid_history_same_domain(bh: BloodHoundCE, domain: Optional[str] = None, 
         print_warning("[!] Same-domain SID history indicates potential persistence!")
         print_table(
             ["Principal", "SID History Target"],
-            [[r["principal"], r["sid_history_target"]] for r in results]
+            [[r["principal"], r["sid_history_target"]] for r in results],
         )
         print_abuse_info("HasSIDHistory", results, extract_domain(results, domain))
 

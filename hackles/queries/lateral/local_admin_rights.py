@@ -1,24 +1,24 @@
 """Local Admin Rights"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Local Admin Rights",
-    category="Lateral Movement",
-    default=True,
-    severity=Severity.MEDIUM
+    name="Local Admin Rights", category="Lateral Movement", default=True, severity=Severity.MEDIUM
 )
-def get_local_admin_rights(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_local_admin_rights(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Get users/groups with local admin rights on computers"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -46,7 +46,7 @@ def get_local_admin_rights(bh: BloodHoundCE, domain: Optional[str] = None, sever
     if results:
         print_table(
             ["Principal", "Type", "Admin On", "OS"],
-            [[r["principal"], r["type"], r["computer"], r["os"]] for r in results]
+            [[r["principal"], r["type"], r["computer"], r["os"]] for r in results],
         )
 
     return result_count

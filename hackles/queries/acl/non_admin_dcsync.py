@@ -1,15 +1,15 @@
 """Non-Admin DCSync Principals"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.abuse.printer import print_abuse_info
+from hackles.core.cypher import node_type
+from hackles.core.utils import extract_domain
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-from hackles.abuse.printer import print_abuse_info
-from hackles.core.utils import extract_domain
-from hackles.core.cypher import node_type
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -19,9 +19,11 @@ if TYPE_CHECKING:
     name="Non-Admin DCSync Principals",
     category="ACL Abuse",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_non_admin_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_non_admin_dcsync(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find principals with DCSync rights who are NOT Domain Admins"""
     domain_filter = "AND toUpper(n.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -53,7 +55,9 @@ def get_non_admin_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severit
 
     if results:
         print_warning("[!] CRITICAL: These principals can DCSync but are NOT Domain Admins!")
-        print_warning("    Often overlooked in security reviews. May be service accounts or misconfigurations.")
+        print_warning(
+            "    Often overlooked in security reviews. May be service accounts or misconfigurations."
+        )
 
         # Count by type
         users = sum(1 for r in results if r["type"] == "User")
@@ -63,8 +67,22 @@ def get_non_admin_dcsync(bh: BloodHoundCE, domain: Optional[str] = None, severit
 
         print_table(
             ["Principal", "Type", "Domain", "GetChanges", "GetChangesAll", "Enabled"],
-            [[r["principal"], r["type"], r["domain"], r["has_getchanges"], r["has_getchangesall"], r["enabled"]] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["type"],
+                    r["domain"],
+                    r["has_getchanges"],
+                    r["has_getchangesall"],
+                    r["enabled"],
+                ]
+                for r in results
+            ],
         )
-        print_abuse_info("DCSync", [{"principal": r["principal"]} for r in results], extract_domain(results, domain))
+        print_abuse_info(
+            "DCSync",
+            [{"principal": r["principal"]} for r in results],
+            extract_domain(results, domain),
+        )
 
     return result_count

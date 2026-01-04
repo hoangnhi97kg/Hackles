@@ -1,23 +1,26 @@
 """Tier Zero Session Exposure"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Tier Zero Session Exposure",
     category="Lateral Movement",
     default=True,
-    severity=Severity.HIGH
+    severity=Severity.HIGH,
 )
-def get_tier_zero_sessions_exposure(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_tier_zero_sessions_exposure(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Tier Zero sessions on non-Tier Zero computers"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -41,7 +44,7 @@ def get_tier_zero_sessions_exposure(bh: BloodHoundCE, domain: Optional[str] = No
         print_warning("[!] Tier Zero credentials exposed on lower-tier systems!")
         print_table(
             ["Computer", "Tier Zero Principal"],
-            [[r["computer"], r["tier_zero_principal"]] for r in results]
+            [[r["computer"], r["tier_zero_principal"]] for r in results],
         )
 
     return result_count

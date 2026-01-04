@@ -1,11 +1,12 @@
 """Single Domain Controller Detection"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
     name="Single Point of Failure DCs",
     category="Basic Info",
     default=True,
-    severity=Severity.MEDIUM
+    severity=Severity.MEDIUM,
 )
 def get_single_dc(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Find domains with only one Domain Controller - availability risk."""
@@ -48,14 +49,10 @@ def get_single_dc(bh: BloodHoundCE, domain: Optional[str] = None, severity: Seve
         print_warning("[!] Single DC = no redundancy - failure impacts entire domain!")
         print_warning("[*] Consider adding additional Domain Controllers")
         print_table(
-            ["Domain", "DC Count"],
-            [[r["domain"], r["dc_count"]] for r in single_dc_domains]
+            ["Domain", "DC Count"], [[r["domain"], r["dc_count"]] for r in single_dc_domains]
         )
     elif results:
         # Show all domains with their DC counts for info
-        print_table(
-            ["Domain", "DC Count"],
-            [[r["domain"], r["dc_count"]] for r in results]
-        )
+        print_table(["Domain", "DC Count"], [[r["domain"], r["dc_count"]] for r in results])
 
     return result_count

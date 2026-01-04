@@ -1,16 +1,19 @@
 """BloodHound CE Neo4j connection and query execution"""
+
 import re
 import time
-from typing import Optional, List, Union, Dict, Any
+from typing import Any, Dict, List, Optional, Union
+
 from neo4j import GraphDatabase
-from neo4j.exceptions import ServiceUnavailable, AuthError, Neo4jError
-from hackles.display.colors import colors
+from neo4j.exceptions import AuthError, Neo4jError, ServiceUnavailable
+
 from hackles.core.cypher import node_type
+from hackles.display.colors import colors
 
 
 def _has_wildcard(pattern: str) -> bool:
     """Check if pattern contains wildcard characters."""
-    return '*' in pattern
+    return "*" in pattern
 
 
 def _pattern_to_regex(pattern: str) -> str:
@@ -18,28 +21,51 @@ def _pattern_to_regex(pattern: str) -> str:
 
     Escapes special regex characters except *, then replaces * with .*
     """
-    escaped = re.escape(pattern).replace(r'\*', '.*')
+    escaped = re.escape(pattern).replace(r"\*", ".*")
     return f"(?i){escaped}"
+
 
 # Attack edge types for path analysis
 ATTACK_EDGES = [
     # Core relationships
-    'MemberOf', 'AdminTo', 'HasSession', 'CanRDP', 'CanPSRemote',
-    'ExecuteDCOM', 'SQLAdmin',
+    "MemberOf",
+    "AdminTo",
+    "HasSession",
+    "CanRDP",
+    "CanPSRemote",
+    "ExecuteDCOM",
+    "SQLAdmin",
     # ACL abuse
-    'GenericAll', 'GenericWrite', 'WriteDacl', 'WriteOwner',
-    'ForceChangePassword', 'AddMember', 'AllExtendedRights',
-    'Owns', 'AddSelf', 'WriteSPN', 'WriteAccountRestrictions',
+    "GenericAll",
+    "GenericWrite",
+    "WriteDacl",
+    "WriteOwner",
+    "ForceChangePassword",
+    "AddMember",
+    "AllExtendedRights",
+    "Owns",
+    "AddSelf",
+    "WriteSPN",
+    "WriteAccountRestrictions",
     # DCSync
-    'GetChanges', 'GetChangesAll', 'DCSync',
+    "GetChanges",
+    "GetChangesAll",
+    "DCSync",
     # Delegation
-    'AllowedToAct', 'AllowedToDelegate',
+    "AllowedToAct",
+    "AllowedToDelegate",
     # Credential access
-    'ReadLAPSPassword', 'ReadGMSAPassword', 'AddKeyCredentialLink',
+    "ReadLAPSPassword",
+    "ReadGMSAPassword",
+    "AddKeyCredentialLink",
     # ADCS
-    'Enroll', 'ManageCA', 'ManageCertificates', 'GoldenCert',
+    "Enroll",
+    "ManageCA",
+    "ManageCertificates",
+    "GoldenCert",
     # SID History and coercion
-    'HasSIDHistory', 'CoerceToTGT',
+    "HasSIDHistory",
+    "CoerceToTGT",
 ]
 
 
@@ -57,10 +83,7 @@ class BloodHoundCE:
     def connect(self) -> bool:
         """Establish connection to Neo4j"""
         try:
-            self.driver = GraphDatabase.driver(
-                self.uri,
-                auth=(self.username, self.password)
-            )
+            self.driver = GraphDatabase.driver(self.uri, auth=(self.username, self.password))
             # Verify connection
             self.driver.verify_connectivity()
             return True
@@ -607,7 +630,7 @@ class BloodHoundCE:
             "short_paths_to_da": [],
             "kerberoastable_admins": [],
             "asrep_roastable": [],
-            "direct_acl_abuse": []
+            "direct_acl_abuse": [],
         }
 
         # 1. Short paths to Domain Admins (1-2 hops)

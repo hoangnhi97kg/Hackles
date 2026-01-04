@@ -1,25 +1,28 @@
 """Computer Stale Passwords (90d+)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
+from hackles.core.config import config
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
-from hackles.core.config import config
-from datetime import datetime
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
+
 
 @register_query(
     name="Computer Stale Passwords (90d+)",
     category="Security Hygiene",
     default=False,
-    severity=Severity.LOW
+    severity=Severity.LOW,
 )
-def get_computer_stale_passwords(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_computer_stale_passwords(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Computer accounts with stale passwords (configurable threshold)"""
     domain_filter = "AND toUpper(c.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -36,11 +39,14 @@ def get_computer_stale_passwords(bh: BloodHoundCE, domain: Optional[str] = None,
     results = bh.run_query(query, params)
     result_count = len(results)
 
-    if not print_header(f"Computer Stale Passwords ({config.stale_days}+ days)", severity, result_count):
+    if not print_header(
+        f"Computer Stale Passwords ({config.stale_days}+ days)", severity, result_count
+    ):
         return result_count
     print_subheader(f"Found {result_count} computer(s) with stale passwords")
 
     if results:
+
         def format_age(ts):
             if ts and ts > 0:
                 days = int((datetime.now().timestamp() - ts) / 86400)
@@ -49,7 +55,7 @@ def get_computer_stale_passwords(bh: BloodHoundCE, domain: Optional[str] = None,
 
         print_table(
             ["Computer", "Password Age"],
-            [[r["computer"], format_age(r["pwdlastset"])] for r in results]
+            [[r["computer"], format_age(r["pwdlastset"])] for r in results],
         )
 
     return result_count

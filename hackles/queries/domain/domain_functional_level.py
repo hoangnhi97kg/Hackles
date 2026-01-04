@@ -1,11 +1,12 @@
 """Domain Functional Level Check"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -28,12 +29,11 @@ RECOMMENDED_LEVEL = 7  # Windows Server 2016
 
 
 @register_query(
-    name="Domain Functional Level",
-    category="Basic Info",
-    default=True,
-    severity=Severity.INFO
+    name="Domain Functional Level", category="Basic Info", default=True, severity=Severity.INFO
 )
-def get_domain_functional_level(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_domain_functional_level(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Check domain functional level - outdated levels miss security features."""
     domain_filter = "WHERE toUpper(d.name) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -66,7 +66,11 @@ def get_domain_functional_level(bh: BloodHoundCE, domain: Optional[str] = None, 
         except (ValueError, TypeError):
             return None
 
-    outdated = [r for r in results if parse_level(r.get("level")) is not None and parse_level(r["level"]) < RECOMMENDED_LEVEL]
+    outdated = [
+        r
+        for r in results
+        if parse_level(r.get("level")) is not None and parse_level(r["level"]) < RECOMMENDED_LEVEL
+    ]
     outdated_count = len(outdated)
 
     if not print_header("Domain Functional Level", severity, result_count):
@@ -79,22 +83,27 @@ def get_domain_functional_level(bh: BloodHoundCE, domain: Optional[str] = None, 
         for r in results:
             level = r.get("level")
             parsed = parse_level(level)
-            level_name = FUNCTIONAL_LEVELS.get(parsed, f"Unknown ({level})") if parsed is not None else str(level) if level else "Unknown"
+            level_name = (
+                FUNCTIONAL_LEVELS.get(parsed, f"Unknown ({level})")
+                if parsed is not None
+                else str(level) if level else "Unknown"
+            )
             is_outdated = parsed is not None and parsed < RECOMMENDED_LEVEL
-            display_results.append([
-                r["domain"],
-                level if level is not None else "N/A",
-                level_name,
-                "Yes" if is_outdated else "No"
-            ])
+            display_results.append(
+                [
+                    r["domain"],
+                    level if level is not None else "N/A",
+                    level_name,
+                    "Yes" if is_outdated else "No",
+                ]
+            )
 
         if outdated_count > 0:
-            print_warning(f"[!] {outdated_count} domain(s) below recommended level (Windows Server 2016)")
+            print_warning(
+                f"[!] {outdated_count} domain(s) below recommended level (Windows Server 2016)"
+            )
             print_warning("[*] Outdated functional levels lack modern security features")
 
-        print_table(
-            ["Domain", "Level", "Windows Version", "Outdated"],
-            display_results
-        )
+        print_table(["Domain", "Level", "Windows Version", "Outdated"], display_results)
 
     return result_count

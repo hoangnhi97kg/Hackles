@@ -1,24 +1,22 @@
 """Dangerous ACL Relationships"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Dangerous ACL Relationships",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.HIGH
+    name="Dangerous ACL Relationships", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
 def get_acl_abuse(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
     """Get dangerous ACL relationships"""
@@ -54,7 +52,16 @@ def get_acl_abuse(bh: BloodHoundCE, domain: Optional[str] = None, severity: Seve
     if results:
         print_table(
             ["Principal", "Type", "Permission", "Target", "Target Type"],
-            [[r["principal"], r["principal_type"], r["permission"], r["target"], r["target_type"]] for r in results]
+            [
+                [
+                    r["principal"],
+                    r["principal_type"],
+                    r["permission"],
+                    r["target"],
+                    r["target_type"],
+                ]
+                for r in results
+            ],
         )
 
         # Print abuse info for each unique permission type found

@@ -1,26 +1,26 @@
 """ADCS ESC9 - No Security Extension"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.cypher import node_type
 from hackles.core.utils import extract_domain
-
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="ADCS ESC9 - No Security Extension",
-    category="ADCS",
-    default=True,
-    severity=Severity.HIGH
+    name="ADCS ESC9 - No Security Extension", category="ADCS", default=True, severity=Severity.HIGH
 )
-def get_esc9_no_security_ext(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_esc9_no_security_ext(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find ESC9 vulnerable configurations - CT_FLAG_NO_SECURITY_EXTENSION.
 
     ESC9 occurs when a certificate template has CT_FLAG_NO_SECURITY_EXTENSION flag,
@@ -70,10 +70,15 @@ def get_esc9_no_security_ext(bh: BloodHoundCE, domain: Optional[str] = None, sev
     print_subheader(f"Found {result_count} ESC9 path(s)")
 
     if results:
-        print_warning("[!] Templates without security extension allow impersonation via GenericWrite")
+        print_warning(
+            "[!] Templates without security extension allow impersonation via GenericWrite"
+        )
         print_table(
             ["Principal", "Type", "Template", "CA", "Variant"],
-            [[r["principal"], r["type"], r["template"], r.get("ca", "Unknown"), r["variant"]] for r in results]
+            [
+                [r["principal"], r["type"], r["template"], r.get("ca", "Unknown"), r["variant"]]
+                for r in results
+            ],
         )
         print_abuse_info("ADCSESC9", results, extract_domain(results, domain))
 

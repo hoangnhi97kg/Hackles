@@ -1,23 +1,23 @@
 """Tier Zero Principal Count"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
+
 @register_query(
-    name="Tier Zero Principal Count",
-    category="Basic Info",
-    default=True,
-    severity=Severity.INFO
+    name="Tier Zero Principal Count", category="Basic Info", default=True, severity=Severity.INFO
 )
-def get_tier_zero_count(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_tier_zero_count(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Count Tier Zero principals per domain"""
     domain_filter = "WHERE toUpper(d.name) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -41,11 +41,11 @@ def get_tier_zero_count(bh: BloodHoundCE, domain: Optional[str] = None, severity
     if results:
         total = sum(r["tier_zero_count"] or 0 for r in results)
         print_table(
-            ["Domain", "Tier Zero Count"],
-            [[r["domain"], r["tier_zero_count"]] for r in results]
+            ["Domain", "Tier Zero Count"], [[r["domain"], r["tier_zero_count"]] for r in results]
         )
         if total > 50:
-            print_warning(f"Total of {total} Tier Zero principals - consider reducing attack surface!")
+            print_warning(
+                f"Total of {total} Tier Zero principals - consider reducing attack surface!"
+            )
 
     return result_count
-

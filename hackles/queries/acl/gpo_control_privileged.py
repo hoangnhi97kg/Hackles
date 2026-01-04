@@ -1,25 +1,25 @@
 """Non-Admin GPO Control"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Non-Admin GPO Control",
-    category="ACL Abuse",
-    default=True,
-    severity=Severity.HIGH
+    name="Non-Admin GPO Control", category="ACL Abuse", default=True, severity=Severity.HIGH
 )
-def get_gpo_control_privileged(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_gpo_control_privileged(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find non-admin principals with control over GPOs"""
     domain_filter = "AND toUpper(gpo.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -47,7 +47,10 @@ def get_gpo_control_privileged(bh: BloodHoundCE, domain: Optional[str] = None, s
         print_warning("[!] GPO modification can lead to code execution on linked computers!")
         print_table(
             ["Principal", "Type", "Permission", "GPO Name"],
-            [[r["principal"], r["principal_type"], r["permission"], r["gpo_name"]] for r in results]
+            [
+                [r["principal"], r["principal_type"], r["permission"], r["gpo_name"]]
+                for r in results
+            ],
         )
         print_abuse_info("GPOAbuse", results, extract_domain(results, domain))
 

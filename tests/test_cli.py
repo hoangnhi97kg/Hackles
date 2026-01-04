@@ -1,6 +1,8 @@
 """Tests for CLI argument parsing"""
-import pytest
+
 from unittest.mock import patch
+
+import pytest
 
 
 class TestCliParser:
@@ -26,11 +28,11 @@ class TestCliParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'testpass'])
+        args = parser.parse_args(["-p", "testpass"])
 
-        assert args.bolt == 'bolt://127.0.0.1:7687'
-        assert args.username == 'neo4j'
-        assert args.password == 'testpass'
+        assert args.bolt == "bolt://127.0.0.1:7687"
+        assert args.username == "neo4j"
+        assert args.password == "testpass"
         assert args.quiet is False
         assert args.debug is False
         assert args.all is False
@@ -40,7 +42,7 @@ class TestCliParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--acl', '--adcs', '--privesc'])
+        args = parser.parse_args(["-p", "pass", "--acl", "--adcs", "--privesc"])
 
         assert args.acl is True
         assert args.adcs is True
@@ -54,29 +56,29 @@ class TestCliParser:
         parser = create_parser()
 
         # JSON output
-        args = parser.parse_args(['-p', 'pass', '--json'])
+        args = parser.parse_args(["-p", "pass", "--json"])
         assert args.json is True
 
         # CSV output
-        args = parser.parse_args(['-p', 'pass', '--csv'])
+        args = parser.parse_args(["-p", "pass", "--csv"])
         assert args.csv is True
 
         # HTML output
-        args = parser.parse_args(['-p', 'pass', '--html', 'report.html'])
-        assert args.html == 'report.html'
+        args = parser.parse_args(["-p", "pass", "--html", "report.html"])
+        assert args.html == "report.html"
 
     def test_quick_filter_flags(self):
         """Test quick filter flags."""
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--kerberoastable'])
+        args = parser.parse_args(["-p", "pass", "--kerberoastable"])
         assert args.kerberoastable is True
 
-        args = parser.parse_args(['-p', 'pass', '--asrep'])
+        args = parser.parse_args(["-p", "pass", "--asrep"])
         assert args.asrep is True
 
-        args = parser.parse_args(['-p', 'pass', '--unconstrained'])
+        args = parser.parse_args(["-p", "pass", "--unconstrained"])
         assert args.unconstrained is True
 
     def test_path_finding_arguments(self):
@@ -86,12 +88,12 @@ class TestCliParser:
         parser = create_parser()
 
         # Two-node path
-        args = parser.parse_args(['-p', 'pass', '--path', 'USER@DOM', 'DC01@DOM'])
-        assert args.path == ['USER@DOM', 'DC01@DOM']
+        args = parser.parse_args(["-p", "pass", "--path", "USER@DOM", "DC01@DOM"])
+        assert args.path == ["USER@DOM", "DC01@DOM"]
 
         # Path to DA
-        args = parser.parse_args(['-p', 'pass', '--path-to-da', 'USER@DOM'])
-        assert args.path_to_da == 'USER@DOM'
+        args = parser.parse_args(["-p", "pass", "--path-to-da", "USER@DOM"])
+        assert args.path_to_da == "USER@DOM"
 
     def test_owned_management_arguments(self):
         """Test owned management arguments."""
@@ -100,11 +102,11 @@ class TestCliParser:
         parser = create_parser()
 
         # Mark owned (can be repeated)
-        args = parser.parse_args(['-p', 'pass', '-o', 'USER1@DOM', '-o', 'USER2@DOM'])
-        assert args.own == ['USER1@DOM', 'USER2@DOM']
+        args = parser.parse_args(["-p", "pass", "-o", "USER1@DOM", "-o", "USER2@DOM"])
+        assert args.own == ["USER1@DOM", "USER2@DOM"]
 
         # Clear owned
-        args = parser.parse_args(['-p', 'pass', '--clear-owned'])
+        args = parser.parse_args(["-p", "pass", "--clear-owned"])
         assert args.clear_owned is True
 
     def test_severity_filter_argument(self):
@@ -112,15 +114,15 @@ class TestCliParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--severity', 'CRITICAL,HIGH'])
-        assert args.severity == 'CRITICAL,HIGH'
+        args = parser.parse_args(["-p", "pass", "--severity", "CRITICAL,HIGH"])
+        assert args.severity == "CRITICAL,HIGH"
 
     def test_stats_flag(self):
         """Test --stats flag."""
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--stats'])
+        args = parser.parse_args(["-p", "pass", "--stats"])
         assert args.stats is True
 
 
@@ -132,9 +134,19 @@ class TestCategoryMapping:
         from hackles.cli.main import CATEGORY_FLAGS
 
         expected_flags = [
-            'acl', 'adcs', 'attack_paths', 'azure', 'basic',
-            'groups', 'delegation', 'exchange', 'lateral',
-            'misc', 'owned_queries', 'privesc', 'hygiene'
+            "acl",
+            "adcs",
+            "attack_paths",
+            "azure",
+            "basic",
+            "groups",
+            "delegation",
+            "exchange",
+            "lateral",
+            "misc",
+            "owned_queries",
+            "privesc",
+            "hygiene",
         ]
 
         for flag in expected_flags:
@@ -149,7 +161,7 @@ class TestClearDatabaseParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['--clear-database', '--delete-all', '-y'])
+        args = parser.parse_args(["--clear-database", "--delete-all", "-y"])
 
         assert args.clear_database is True
         assert args.delete_all is True
@@ -160,7 +172,7 @@ class TestClearDatabaseParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['--clear-database', '--delete-ad', '--delete-azure'])
+        args = parser.parse_args(["--clear-database", "--delete-ad", "--delete-azure"])
 
         assert args.delete_ad is True
         assert args.delete_azure is True
@@ -173,7 +185,7 @@ class TestClearDatabaseParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['--clear-database', '--delete-all', '-y'])
+        args = parser.parse_args(["--clear-database", "--delete-all", "-y"])
 
         assert args.yes is True
 
@@ -182,14 +194,16 @@ class TestClearDatabaseParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args([
-            '--clear-database',
-            '--delete-ad',
-            '--delete-azure',
-            '--delete-sourceless',
-            '--delete-ingest-history',
-            '--delete-quality-history'
-        ])
+        args = parser.parse_args(
+            [
+                "--clear-database",
+                "--delete-ad",
+                "--delete-azure",
+                "--delete-sourceless",
+                "--delete-ingest-history",
+                "--delete-quality-history",
+            ]
+        )
 
         assert args.delete_ad is True
         assert args.delete_azure is True
@@ -203,7 +217,7 @@ class TestClearDatabaseParser:
 
         parser = create_parser()
         # Should not raise - clear-database is an API operation
-        args = parser.parse_args(['--clear-database', '--delete-all', '-y'])
+        args = parser.parse_args(["--clear-database", "--delete-all", "-y"])
         assert args.clear_database is True
         assert args.password is None
 
@@ -216,7 +230,7 @@ class TestAuditParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--audit'])
+        args = parser.parse_args(["-p", "pass", "--audit"])
 
         assert args.audit is True
 
@@ -225,17 +239,17 @@ class TestAuditParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--audit', '-d', 'CORP.LOCAL'])
+        args = parser.parse_args(["-p", "pass", "--audit", "-d", "CORP.LOCAL"])
 
         assert args.audit is True
-        assert args.domain == 'CORP.LOCAL'
+        assert args.domain == "CORP.LOCAL"
 
     def test_audit_with_json_output(self):
         """Test --audit with JSON output."""
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--audit', '--json'])
+        args = parser.parse_args(["-p", "pass", "--audit", "--json"])
 
         assert args.audit is True
         assert args.json is True
@@ -245,7 +259,7 @@ class TestAuditParser:
         from hackles.cli.parser import create_parser
 
         parser = create_parser()
-        args = parser.parse_args(['-p', 'pass', '--audit', '--csv'])
+        args = parser.parse_args(["-p", "pass", "--audit", "--csv"])
 
         assert args.audit is True
         assert args.csv is True
@@ -257,17 +271,25 @@ class TestEnhancedStats:
     def test_stats_data_structure(self):
         """Test collect_stats_data returns expected structure with ADCS fields."""
         # This test verifies the structure without needing a Neo4j connection
-        expected_keys = ['domain', 'users', 'computers', 'groups', 'adcs',
-                        'domain_controllers', 'protected_users', 'risk']
-        expected_adcs_keys = ['enterprise_cas', 'cert_templates']
+        expected_keys = [
+            "domain",
+            "users",
+            "computers",
+            "groups",
+            "adcs",
+            "domain_controllers",
+            "protected_users",
+            "risk",
+        ]
+        expected_adcs_keys = ["enterprise_cas", "cert_templates"]
 
         # We can't test the actual function without Neo4j, but we can verify
         # the structure is documented correctly
-        assert 'adcs' in expected_keys
-        assert 'domain_controllers' in expected_keys
-        assert 'protected_users' in expected_keys
-        assert 'enterprise_cas' in expected_adcs_keys
-        assert 'cert_templates' in expected_adcs_keys
+        assert "adcs" in expected_keys
+        assert "domain_controllers" in expected_keys
+        assert "protected_users" in expected_keys
+        assert "enterprise_cas" in expected_adcs_keys
+        assert "cert_templates" in expected_adcs_keys
 
     def test_stats_flag_parsing(self):
         """Test --stats flag with output formats."""
@@ -276,16 +298,16 @@ class TestEnhancedStats:
         parser = create_parser()
 
         # Stats with JSON
-        args = parser.parse_args(['-p', 'pass', '--stats', '--json'])
+        args = parser.parse_args(["-p", "pass", "--stats", "--json"])
         assert args.stats is True
         assert args.json is True
 
         # Stats with CSV
-        args = parser.parse_args(['-p', 'pass', '--stats', '--csv'])
+        args = parser.parse_args(["-p", "pass", "--stats", "--csv"])
         assert args.stats is True
         assert args.csv is True
 
         # Stats with domain filter
-        args = parser.parse_args(['-p', 'pass', '--stats', '-d', 'CORP.LOCAL'])
+        args = parser.parse_args(["-p", "pass", "--stats", "-d", "CORP.LOCAL"])
         assert args.stats is True
-        assert args.domain == 'CORP.LOCAL'
+        assert args.domain == "CORP.LOCAL"

@@ -1,24 +1,23 @@
 """Trust SID Filtering Analysis"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
-
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
 
 
 @register_query(
-    name="Trust SID Filtering Analysis",
-    category="Basic Info",
-    default=True,
-    severity=Severity.HIGH
+    name="Trust SID Filtering Analysis", category="Basic Info", default=True, severity=Severity.HIGH
 )
-def get_trust_sid_filtering(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_trust_sid_filtering(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Find domain trusts with SID filtering disabled (cross-domain escalation risk)"""
     query = """
     MATCH (d1:Domain)-[r:TrustedBy]->(d2:Domain)
@@ -45,13 +44,24 @@ def get_trust_sid_filtering(bh: BloodHoundCE, domain: Optional[str] = None, seve
             print_warning("    SID History attacks possible across these trusts!")
             print()
             print("    Exploitation: Create Golden Ticket with SID History from trusted domain")
-            print("    mimikatz # kerberos::golden /user:Administrator /domain:<CHILD> /sid:<CHILD_SID> /krbtgt:<HASH> /sids:<PARENT>-519 /ptt")
+            print(
+                "    mimikatz # kerberos::golden /user:Administrator /domain:<CHILD> /sid:<CHILD_SID> /krbtgt:<HASH> /sids:<PARENT>-519 /ptt"
+            )
             print()
 
         print_table(
             ["Trusting Domain", "Trusted Domain", "Type", "SID Filtering", "Transitive", "Status"],
-            [[r["trusting_domain"], r["trusted_domain"], r["trust_type"],
-              r["sid_filtering"], r["transitive"], r["status"]] for r in results]
+            [
+                [
+                    r["trusting_domain"],
+                    r["trusted_domain"],
+                    r["trust_type"],
+                    r["sid_filtering"],
+                    r["transitive"],
+                    r["status"],
+                ]
+                for r in results
+            ],
         )
 
     return result_count

@@ -1,14 +1,15 @@
 """Kerberoastable (Stale Passwords 5yr+)"""
+
 from __future__ import annotations
 
-from typing import Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
-from hackles.queries.base import register_query
-from hackles.display.colors import Severity
-from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.abuse.printer import print_abuse_info
 from hackles.core.utils import extract_domain
-from datetime import datetime
+from hackles.display.colors import Severity
+from hackles.display.tables import print_header, print_subheader, print_table, print_warning
+from hackles.queries.base import register_query
 
 if TYPE_CHECKING:
     from hackles.core.bloodhound import BloodHoundCE
@@ -18,9 +19,11 @@ if TYPE_CHECKING:
     name="Kerberoastable (Stale Passwords 5yr+)",
     category="Privilege Escalation",
     default=True,
-    severity=Severity.CRITICAL
+    severity=Severity.CRITICAL,
 )
-def get_kerberoastable_stale_passwords(bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None) -> int:
+def get_kerberoastable_stale_passwords(
+    bh: BloodHoundCE, domain: Optional[str] = None, severity: Severity = None
+) -> int:
     """Kerberoastable users with passwords older than 5 years - most likely to crack"""
     domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
@@ -59,7 +62,10 @@ def get_kerberoastable_stale_passwords(bh: BloodHoundCE, domain: Optional[str] =
 
         print_table(
             ["Name", "Password Age", "Admin", "SPN"],
-            [[r["name"], format_pwd_age(r["pwdlastset"]), r["admincount"], r["spns"]] for r in results]
+            [
+                [r["name"], format_pwd_age(r["pwdlastset"]), r["admincount"], r["spns"]]
+                for r in results
+            ],
         )
         print_abuse_info("Kerberoasting", results, extract_domain(results, domain))
 
