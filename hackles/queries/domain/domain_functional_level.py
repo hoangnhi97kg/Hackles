@@ -82,13 +82,13 @@ def get_domain_functional_level(
         for r in results:
             level = r.get("level")
             parsed = parse_level(level)
-            level_name = (
-                FUNCTIONAL_LEVELS.get(parsed, f"Unknown ({level})")
-                if parsed is not None
-                else str(level)
-                if level
-                else "Unknown"
-            )
+            # Determine level name based on parsed value
+            if parsed is not None:
+                level_name = FUNCTIONAL_LEVELS.get(parsed, f"Unknown ({level})")
+            elif level:
+                level_name = str(level)
+            else:
+                level_name = "Unknown"
             is_outdated = parsed is not None and parsed < RECOMMENDED_LEVEL
             display_results.append(
                 [
