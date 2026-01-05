@@ -1,6 +1,6 @@
 # Hackles
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/Real-Fruit-Snacks/hackles/releases/tag/v2.3.0)
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/Real-Fruit-Snacks/hackles/releases/tag/v2.4.0)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Neo4j 5.0+](https://img.shields.io/badge/neo4j-5.0+-green.svg)](https://neo4j.com/)
@@ -8,10 +8,10 @@
 
 > **Extract quick wins from BloodHound Community Edition**
 
-A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **152 security queries** across 13 categories with clear vulnerability impact descriptions.
+A fast CLI tool for identifying Active Directory attack paths, misconfigurations, and privilege escalation opportunities. **166 security queries** across 13 categories with clear vulnerability impact descriptions.
 
 ```bash
-python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 152 queries
+python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a                    # Run all 166 queries
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' --adcs --privesc      # ADCS + privilege escalation
 python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html # Generate HTML report
 ```
@@ -22,7 +22,7 @@ python -m hackles -u neo4j -p 'bloodhoundcommunityedition' -a --html report.html
 
 | Feature | Description |
 |---------|-------------|
-| **152 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, coercion, lateral movement |
+| **166 Security Queries** | Privilege escalation, ACL abuse, ADCS (ESC1-ESC15), delegation, coercion, lateral movement, Azure/Hybrid |
 | **Quick Wins Summary** | `--quick-wins` shows 1-2 hop paths to DA, Kerberoastable admins, AS-REP targets, ACL abuse |
 | **Security Audit** | `--audit` consolidated hygiene report: Kerberoastable admins, AS-REP, unconstrained delegation, unsupported OS, LAPS, guest accounts |
 | **Quick Enumeration** | `--computers`, `--users`, `--spns` for rapid domain enumeration |
@@ -98,17 +98,17 @@ register-python-argcomplete --shell fish hackles | source
 
 | Category | Queries | Flag | Focus |
 |----------|:-------:|------|-------|
-| ACL Abuse | 22 | `--acl` | GenericAll, WriteDacl, WriteOwner, ForceChangePassword, AddMember, AllExtendedRights |
-| Credentials | 18 | `--privesc` | Kerberoasting, DCSync, shadow creds, service account security |
+| ACL Abuse | 26 | `--acl` | GenericAll, WriteDacl, WriteOwner, ForceChangePassword, AddMember, chained abuse |
+| Credentials | 19 | `--privesc` | Kerberoasting, DCSync, shadow creds, service account security |
 | Security Hygiene | 19 | `--hygiene` | LAPS, SMB signing, AdminSDHolder, stale passwords |
-| ADCS | 17 | `--adcs` | ESC1-ESC15, golden certs, ManageCA, enrollment agents |
-| Lateral Movement | 15 | `--lateral` | RDP, DCOM, PSRemote, SQL, sessions, coercion targets |
+| ADCS | 18 | `--adcs` | ESC1-ESC15, golden certs, ManageCA, ManageCertificates |
+| Lateral Movement | 19 | `--lateral` | RDP, DCOM, PSRemote, SQL, coercion relay (LDAP/LDAPS/ADCS/SMB) |
 | Domain Analysis | 14 | `--basic` | Trusts, functional level, single DC |
 | Owned Principals | 11 | `--owned-queries` | Paths from compromised accounts |
 | Dangerous Groups | 10 | `--groups` | DNSAdmins, Backup Ops, RODC replication |
-| Delegation | 12 | `--delegation` | Constrained, unconstrained, RBCD, delegation chains, S4U2Self, coercion chains |
+| Delegation | 12 | `--delegation` | Constrained, unconstrained, RBCD, delegation chains, S4U2Self |
+| Azure/Hybrid | 9 | `--azure` | AAD Connect, sync accounts, hybrid attack surface |
 | Attack Paths | 6 | `--attack-paths` | Shortest paths, attack chains |
-| Azure/Hybrid | 3 | `--azure` | AAD Connect, hybrid DCSync |
 | Miscellaneous | 3 | `--misc` | Circular groups, duplicate SPNs |
 | Exchange | 2 | `--exchange` | Exchange domain rights |
 

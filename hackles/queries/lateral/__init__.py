@@ -1,6 +1,10 @@
 """Query functions for lateral"""
 
+from .coerce_relay_adcs import get_coerce_relay_adcs
 from .coerce_relay_edges import get_coerce_relay_edges
+from .coerce_relay_ldap import get_coerce_relay_ldap
+from .coerce_relay_ldaps import get_coerce_relay_ldaps
+from .coerce_relay_smb import get_coerce_relay_smb
 from .computer_admin_chains import get_computer_admin_chains
 from .da_sessions_non_dcs import get_da_sessions_non_dcs
 from .da_sessions_workstations import get_da_sessions_workstations
@@ -30,4 +34,8 @@ __all__ = [
     "get_da_sessions_non_dcs",
     "get_computer_admin_chains",
     "get_sessions_on_servers",
+    "get_coerce_relay_adcs",
+    "get_coerce_relay_ldap",
+    "get_coerce_relay_ldaps",
+    "get_coerce_relay_smb",
 ]

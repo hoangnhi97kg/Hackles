@@ -16,6 +16,7 @@ from .esc13_issuance_policy import get_esc13_issuance_policy
 from .esc15_vulnerable import get_esc15_vulnerable
 from .golden_cert_paths import get_golden_cert_paths
 from .manage_ca import get_manage_ca
+from .manage_certificates import get_manage_certificates
 from .vulnerable_enrollment import get_vulnerable_enrollment
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "get_golden_cert_paths",
     "get_manage_ca",
     "get_vulnerable_enrollment",
+    "get_manage_certificates",
 ]

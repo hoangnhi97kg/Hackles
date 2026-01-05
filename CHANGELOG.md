@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-01-05
+
+### Added
+
+- **16 New Security Queries** (150 → 166 total):
+
+  **Credential/ACL Queries (5):**
+  - `ManageCertificates Rights` - ADCS certificate management abuse (ESC7 variant)
+  - `WriteOwner Abuse Paths` - Object takeover via ownership change
+  - `GetChangesAll Only` - Partial DCSync detection
+  - `Chained ACL Abuse` - Two-hop privilege escalation to high-value targets
+  - `AddSelf to Privileged Groups` - Self-add to DA/privileged groups
+
+  **Coercion Relay Separation (4):**
+  - `Coercion Relay to LDAP` - LDAP relay for RBCD/shadow credentials
+  - `Coercion Relay to LDAPS` - LDAPS relay (bypasses signing)
+  - `Coercion Relay to ADCS (ESC8)` - Certificate request via relay
+  - `Coercion Relay to SMB` - SMB relay for code execution
+
+  **Azure/Hybrid Expansion (6):**
+  - `Sync Account Excessive Privileges` - MSOL/AAD accounts with more than DCSync
+  - `Service Accounts with On-Prem Admin` - SPNs with local admin rights
+  - `Paths to AAD Connect Servers` - Attack paths from owned to AADC
+  - `Privileged Accounts Synced to Azure` - Identify synced privileged accounts
+  - `Azure-Related SPNs` - Systems hosting Azure services
+  - `Hybrid Identity Attack Surface` - Summary of all hybrid components
+
+  **ACL (1):**
+  - `Non-Admin Owners of High-Value Objects` - Ownership-based privilege escalation
+
 ## [2.3.0] - 2026-01-04
 
 ### Added

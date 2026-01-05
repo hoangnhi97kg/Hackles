@@ -3,6 +3,7 @@
 from .asrep_roastable import get_asrep_roastable
 from .dcsync import get_dcsync
 from .dcsync_principals import get_dcsync_principals
+from .getchangesall_only import get_getchangesall_only
 from .gmsa_readers import get_gmsa_readers
 from .kerberoastable import get_kerberoastable
 from .kerberoastable_stale_passwords import get_kerberoastable_stale_passwords
@@ -38,4 +39,5 @@ __all__ = [
     "get_shadow_credentials",
     "get_sid_history",
     "get_userpassword_attribute",
+    "get_getchangesall_only",
 ]
