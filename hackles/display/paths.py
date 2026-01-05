@@ -1,6 +1,6 @@
 """Attack path display functions"""
 
-from typing import Dict, List
+from __future__ import annotations
 
 from prettytable import PrettyTable
 
@@ -33,7 +33,7 @@ def _format_node_with_owned(node_name: str | None, use_short: bool = True) -> st
     return short_name
 
 
-def _build_full_path_string(nodes: List[str], rels: List[str]) -> str:
+def _build_full_path_string(nodes: list[str], rels: list[str]) -> str:
     """Build a full path string with nodes and relationships.
 
     Example: R.ANDREWS -[MemberOf]-> DOMAIN USERS -[LocalToComputer]-> DC20
@@ -54,7 +54,7 @@ def _build_full_path_string(nodes: List[str], rels: List[str]) -> str:
     return " ".join(parts)
 
 
-def print_paths_grouped(results: List[Dict], max_display: int = MAX_PATHS_DISPLAY):
+def print_paths_grouped(results: list[dict], max_display: int = MAX_PATHS_DISPLAY):
     """Display paths in a table format with full path information.
 
     Args:
@@ -109,7 +109,7 @@ def print_path(path_data: dict):
     print_paths_grouped([path_data], max_display=1)
 
 
-def print_paths_detailed(results: List[Dict], max_display: int = 5):
+def print_paths_detailed(results: list[dict], max_display: int = 5):
     """Display paths with full detail (vertical format) for important paths.
 
     Use this for critical paths where users need to see every step.
@@ -161,7 +161,7 @@ def print_paths_detailed(results: List[Dict], max_display: int = 5):
         print(f"    {colors.GRAY}... and {hidden_count} more path(s) not shown{colors.END}")
 
 
-def print_paths_summary(results: List[Dict]):
+def print_paths_summary(results: list[dict]):
     """Print a summary table of paths without full details.
 
     Shows unique starting nodes and their shortest path lengths.
