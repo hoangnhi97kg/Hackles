@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
@@ -27,6 +28,9 @@ def get_gmsa_readers(bh: BloodHoundCE, domain: str | None = None, severity: Seve
     query = f"""
     MATCH p=(n)-[:ReadGMSAPassword]->(g)
     WHERE (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN n.name AS principal, {node_type("n")} AS type, g.name AS gmsa_account
     LIMIT 100
@@ -43,5 +47,6 @@ def get_gmsa_readers(bh: BloodHoundCE, domain: str | None = None, severity: Seve
             ["Principal", "Type", "gMSA Account"],
             [[r["principal"], r["type"], r["gmsa_account"]] for r in results],
         )
+        print_abuse_for_query("gmsa", results, target_key="gmsa_account")
 
     return result_count

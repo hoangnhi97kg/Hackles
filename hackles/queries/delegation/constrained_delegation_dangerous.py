@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -54,5 +55,6 @@ def get_constrained_delegation_dangerous(
             ["Principal", "Target", "Delegation SPNs", "Is DC?"],
             [[r["principal"], r["target"], r["delegation_targets"], r["is_dc"]] for r in results],
         )
+        print_abuse_for_query("constrained", results, target_key="principal")
 
     return result_count

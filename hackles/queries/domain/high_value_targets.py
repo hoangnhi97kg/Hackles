@@ -30,6 +30,7 @@ def get_high_value_targets(
     query = f"""
     MATCH (n)
     WHERE ('admin_tier_0' IN n.system_tags OR 'high_value' IN n.system_tags)
+    AND n.name IS NOT NULL AND n.name <> ''
     {domain_filter}
     RETURN
         n.name AS name,

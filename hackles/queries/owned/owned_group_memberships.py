@@ -29,6 +29,11 @@ def get_owned_group_memberships(
     query = f"""
     MATCH (owned)-[:MemberOf*1..3]->(g:Group)
     WHERE (owned:Tag_Owned OR 'owned' IN owned.system_tags OR owned.owned = true)
+    // Exclude implicit system groups (not actionable for pentesting)
+    AND NOT g.objectid = 'S-1-1-0'        // EVERYONE
+    AND NOT g.objectid = 'S-1-5-11'       // AUTHENTICATED USERS
+    AND NOT g.name STARTS WITH 'EVERYONE@'
+    AND NOT g.name STARTS WITH 'AUTHENTICATED USERS@'
     {from_owned_filter}
     RETURN owned.name AS owned_principal, {node_type("owned")} AS owned_type,
            g.name AS group_name,

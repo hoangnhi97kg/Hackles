@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_section
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
@@ -31,8 +32,13 @@ def get_write_owner(bh: BloodHoundCE, domain: str | None = None, severity: Sever
     query = f"""
     MATCH (n)-[:WriteOwner]->(target)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     AND (target:User OR target:Group OR target:Computer OR target:GPO)
     {domain_filter}
     RETURN n.name AS principal,
@@ -56,5 +62,6 @@ def get_write_owner(bh: BloodHoundCE, domain: str | None = None, severity: Sever
             ["Principal", "Type", "Target", "Target Type"],
             [[r["principal"], r["type"], r["target"], r["target_type"]] for r in results],
         )
+        print_abuse_section(results, "WriteOwner")
 
     return result_count

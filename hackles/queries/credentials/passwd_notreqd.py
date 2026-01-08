@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -56,5 +57,6 @@ def get_passwd_notreqd(
             ["Name", "Display Name", "Admin", "Description"],
             [[r["name"], r["displayname"], r["admincount"], r["description"]] for r in results],
         )
+        print_abuse_for_query("passwd_notreqd", results, target_key="name")
 
     return result_count

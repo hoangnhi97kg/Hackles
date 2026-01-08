@@ -55,6 +55,24 @@ Thank you for your interest in contributing to Hackles! This document provides g
 3. Follow the existing patterns in similar query files
 4. Add abuse templates to `hackles/abuse/templates/` if applicable
 
+### Non-Admin Query Guidelines
+
+When writing queries that filter for "non-admin" principals, always include RID-based exclusions. The `admincount` property alone is unreliable as it can be NULL or false for built-in admin groups.
+
+**Required exclusions for non-admin ACL queries:**
+```cypher
+WHERE (n.admincount IS NULL OR n.admincount = false)
+AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+AND NOT n.objectid ENDS WITH '-544'  // Administrators
+AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
+```
+
+See `CLAUDE.md` for the full reference of well-known RIDs and additional exclusion patterns.
+
 ## Adding Abuse Templates
 
 Create a YAML file in `hackles/abuse/templates/`:

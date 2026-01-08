@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_section
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
@@ -33,8 +34,14 @@ def get_non_admin_owners(
     query = f"""
     MATCH (n)-[:Owns]->(target)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
+    AND n.name IS NOT NULL AND n.name <> ''
     AND (target:User OR target:Group OR target:Computer OR target:GPO)
     AND (target.highvalue = true OR target:Tag_Tier_Zero OR target.admincount = true)
     {domain_filter}
@@ -59,5 +66,6 @@ def get_non_admin_owners(
             ["Owner", "Owner Type", "Owned Object", "Object Type"],
             [[r["owner"], r["owner_type"], r["owned_object"], r["object_type"]] for r in results],
         )
+        print_abuse_section(results, "Owns")
 
     return result_count

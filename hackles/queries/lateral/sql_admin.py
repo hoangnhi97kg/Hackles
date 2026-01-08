@@ -25,6 +25,9 @@ def get_sql_admin(bh: BloodHoundCE, domain: str | None = None, severity: Severit
     MATCH (n)-[:SQLAdmin]->(c:Computer)
     WHERE (n:User OR n:Group)
     AND (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN n.name AS principal, {node_type("n")} AS type, c.name AS sql_server, c.operatingsystem AS os
     LIMIT 100

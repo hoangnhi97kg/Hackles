@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_section
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
@@ -31,6 +32,8 @@ def get_owns_relationships(
     WHERE NOT n.objectid ENDS WITH '-512'
       AND NOT n.objectid ENDS WITH '-519'
       AND NOT n.objectid ENDS WITH '-544'
+      AND n.name IS NOT NULL
+      AND n.name <> ''
     {domain_filter}
     RETURN n.name AS owner, {node_type("n")} AS owner_type,
            m.name AS owned_object, {node_type("m")} AS object_type
@@ -50,5 +53,6 @@ def get_owns_relationships(
             ["Owner", "Owner Type", "Owned Object", "Object Type"],
             [[r["owner"], r["owner_type"], r["owned_object"], r["object_type"]] for r in results],
         )
+        print_abuse_section(results, "Owns")
 
     return result_count

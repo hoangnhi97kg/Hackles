@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
@@ -45,5 +46,6 @@ def get_rbcd(bh: BloodHoundCE, domain: str | None = None, severity: Severity = N
             ["Principal", "Type", "Can Act On"],
             [[r["principal"], r["type"], r["target"]] for r in results],
         )
+        print_abuse_for_query("rbcd", results, target_key="target")
 
     return result_count

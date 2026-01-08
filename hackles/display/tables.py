@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 from prettytable import PrettyTable
 
 from hackles.core.config import config
+from hackles.core.utils import format_timestamp, is_unix_timestamp
 from hackles.display.colors import Severity, colors
 
 
@@ -73,7 +74,7 @@ def print_severity_summary(severity_counts: Dict[Severity, int]) -> None:
             print(f"    {sev.color}{sev.label}{colors.END}: {count} {label} with findings")
 
 
-def print_table(headers: List[str], rows: List[List[Any]], max_width: int = 50) -> None:
+def print_table(headers: List[str], rows: List[List[Any]], max_width: int = 65) -> None:
     """Print a formatted table with owned principal highlighting (only in table mode)."""
     if config.output_format != "table":
         return
@@ -96,6 +97,9 @@ def print_table(headers: List[str], rows: List[List[Any]], max_width: int = 50) 
                 formatted_row.append(", ".join(str(v) for v in val[:3]))
                 if len(val) > 3:
                     formatted_row[-1] += f" (+{len(val)-3} more)"
+            elif isinstance(val, (int, float)) and is_unix_timestamp(val):
+                # Auto-format Unix timestamps to readable dates
+                formatted_row.append(format_timestamp(val))
             elif isinstance(val, str):
                 if val in config.owned_cache:
                     is_admin = config.owned_cache[val]

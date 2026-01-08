@@ -24,12 +24,20 @@ def get_acl_abuse(bh: BloodHoundCE, domain: str | None = None, severity: Severit
     params = {"domain": domain} if domain else {}
 
     # Query for dangerous ACL edges
+    # Excludes admin groups by admincount AND by well-known RIDs
     query = f"""
     MATCH (n)-[r]->(m)
     WHERE type(r) IN ['GenericAll', 'WriteDacl', 'WriteOwner', 'GenericWrite',
                        'ForceChangePassword', 'AddMember', 'AllExtendedRights',
                        'AddSelf', 'WriteSPN', 'AddKeyCredentialLink']
     AND (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     {domain_filter}
     RETURN
         n.name AS principal,

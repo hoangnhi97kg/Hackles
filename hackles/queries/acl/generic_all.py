@@ -29,6 +29,13 @@ def get_generic_all(bh: BloodHoundCE, domain: str | None = None, severity: Sever
     query = f"""
     MATCH (n)-[:GenericAll]->(m)
     WHERE (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     AND NOT n.name STARTS WITH 'SYSTEM@'
     AND NOT n.name STARTS WITH 'LOCAL SERVICE@'
     AND NOT n.name STARTS WITH 'NETWORK SERVICE@'

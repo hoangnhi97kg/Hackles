@@ -9,6 +9,7 @@ from .krbtgt_age import get_krbtgt_age
 from .ldap_channel_binding import get_ldap_channel_binding
 from .ldap_signing_disabled import get_ldap_signing_disabled
 from .logon_scripts_foreign import get_logon_scripts_foreign
+from .malformed_computer_names import get_malformed_computer_names
 from .precreated_computers import get_precreated_computers
 from .privileged_ou_delegation import get_privileged_ou_delegation
 from .service_accounts_unprotected import get_service_accounts_unprotected
@@ -30,6 +31,7 @@ __all__ = [
     "get_ldap_channel_binding",
     "get_ldap_signing_disabled",
     "get_logon_scripts_foreign",
+    "get_malformed_computer_names",
     "get_precreated_computers",
     "get_service_accounts_unprotected",
     "get_smb_signing_disabled",

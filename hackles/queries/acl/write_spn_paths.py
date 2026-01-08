@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_section
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -25,6 +26,13 @@ def get_write_spn_paths(
     query = f"""
     MATCH (n)-[:WriteSPN]->(target:User)
     WHERE (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     AND target.enabled = true
     {domain_filter}
     RETURN
@@ -56,5 +64,6 @@ def get_write_spn_paths(
                 for r in results
             ],
         )
+        print_abuse_section(results, "WriteSPN")
 
     return result_count

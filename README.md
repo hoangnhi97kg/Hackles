@@ -1,6 +1,6 @@
 # Hackles
 
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/Real-Fruit-Snacks/hackles/releases/tag/v2.4.0)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/Real-Fruit-Snacks/hackles/releases/tag/v2.5.0)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Neo4j 5.0+](https://img.shields.io/badge/neo4j-5.0+-green.svg)](https://neo4j.com/)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
@@ -25,8 +26,20 @@ def get_rbcd_targets(bh: BloodHoundCE, domain: str | None = None, severity: Seve
     MATCH (p)-[:GenericAll|GenericWrite|WriteAccountRestrictions]->(c:Computer)
     WHERE NOT EXISTS {{
         MATCH (p)-[:MemberOf*1..]->(g:Group)
-        WHERE g.objectid ENDS WITH '-512' OR g.objectid ENDS WITH '-519'
+        WHERE g.objectid ENDS WITH '-512'   // Domain Admins
+           OR g.objectid ENDS WITH '-519'   // Enterprise Admins
+           OR g.objectid ENDS WITH '-544'   // Administrators
+           OR g.objectid ENDS WITH '-548'   // Account Operators
+           OR g.objectid ENDS WITH '-549'   // Server Operators
+           OR g.objectid ENDS WITH '-551'   // Backup Operators
     }}
+    // Exclude built-in admin and operator groups by RID
+    AND NOT p.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT p.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT p.objectid ENDS WITH '-544'  // Administrators
+    AND NOT p.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT p.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT p.objectid ENDS WITH '-551'  // Backup Operators
     {domain_filter}
     RETURN p.name AS principal, {node_type("p")} AS principal_type,
            c.name AS target_computer, c.domain AS domain,
@@ -70,5 +83,6 @@ def get_rbcd_targets(bh: BloodHoundCE, domain: str | None = None, severity: Seve
                 for r in results
             ],
         )
+        print_abuse_for_query("rbcd", results, target_key="target_computer")
 
     return result_count

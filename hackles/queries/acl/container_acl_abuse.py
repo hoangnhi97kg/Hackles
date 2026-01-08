@@ -25,8 +25,9 @@ def get_container_acl_abuse(
 
     query = f"""
     MATCH (n)-[r:GenericAll|WriteDacl|WriteOwner|Owns]->(ou:OU)
-    WHERE NOT n.objectid ENDS WITH '-512'
-      AND NOT n.objectid ENDS WITH '-519'
+    WHERE NOT n.objectid ENDS WITH '-512'  // Domain Admins
+      AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+      AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN n.name AS principal, {node_type("n")} AS type, type(r) AS permission, ou.name AS ou_name
     ORDER BY ou.name

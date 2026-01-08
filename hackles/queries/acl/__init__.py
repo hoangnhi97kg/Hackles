@@ -15,7 +15,6 @@ from .gpo_control_privileged import get_gpo_control_privileged
 from .gpo_interesting_names import get_gpo_interesting_names
 from .gpos_dc_ou import get_gpos_dc_ou
 from .laps_readers import get_laps_readers
-from .non_admin_dcsync import get_non_admin_dcsync
 from .non_admin_owners import get_non_admin_owners
 from .owns_relationships import get_owns_relationships
 from .schema_config_control import get_schema_config_control
@@ -47,7 +46,6 @@ __all__ = [
     "get_write_dacl",
     "get_write_spn_paths",
     "get_shadow_admins",
-    "get_non_admin_dcsync",
     "get_all_extended_rights",
     "get_schema_config_control",
     "get_addself_privileged",

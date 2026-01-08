@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -92,5 +93,6 @@ def get_constrained_delegation(
                 for r in all_results
             ],
         )
+        print_abuse_for_query("constrained", all_results, target_key="name")
 
     return result_count

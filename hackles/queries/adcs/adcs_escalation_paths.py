@@ -26,6 +26,9 @@ def get_adcs_escalation_paths(
     query = f"""
     MATCH p=(n)-[r:ADCSESC1|ADCSESC3|ADCSESC4|ADCSESC5|ADCSESC6a|ADCSESC6b|ADCSESC7|ADCSESC9a|ADCSESC9b|ADCSESC10a|ADCSESC10b|ADCSESC13]->(m)
     WHERE (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     OPTIONAL MATCH (m)-[:PublishedTo]->(ca:EnterpriseCA)
     RETURN

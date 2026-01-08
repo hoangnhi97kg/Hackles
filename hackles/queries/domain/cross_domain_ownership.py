@@ -25,9 +25,13 @@ def get_cross_domain_ownership(
     """Find objects owned by principals from different domains"""
     query = f"""
     MATCH (owner)-[:Owns]->(target)
-    WHERE owner.domain <> target.domain
-    AND owner.domain IS NOT NULL
-    AND target.domain IS NOT NULL
+    WHERE toLower(owner.domain) <> toLower(target.domain)
+    AND owner.domain IS NOT NULL AND owner.domain <> ''
+    AND target.domain IS NOT NULL AND target.domain <> ''
+    // Exclude built-in admin groups that legitimately own their domain
+    AND NOT owner.objectid ENDS WITH '-544'  // Administrators
+    AND NOT owner.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT owner.objectid ENDS WITH '-519'  // Enterprise Admins
     RETURN owner.name AS owner, owner.domain AS owner_domain,
            target.name AS target_object, target.domain AS target_domain,
            {node_type("target")} AS target_type

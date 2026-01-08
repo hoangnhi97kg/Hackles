@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
@@ -29,6 +30,9 @@ def get_shadow_credentials(
     query = f"""
     MATCH p=(n)-[:AddKeyCredentialLink]->(target)
     WHERE (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     AND NOT target.objectid ENDS WITH '-500'
     {domain_filter}
     RETURN n.name AS principal, {node_type("n")} AS type, target.name AS target, {node_type("target")} AS target_type
@@ -46,5 +50,6 @@ def get_shadow_credentials(
             ["Principal", "Type", "Target", "Target Type"],
             [[r["principal"], r["type"], r["target"], r["target_type"]] for r in results],
         )
+        print_abuse_for_query("shadow_credentials", results, target_key="target")
 
     return result_count

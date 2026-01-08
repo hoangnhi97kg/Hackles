@@ -5,7 +5,7 @@ A CLI tool for identifying Active Directory attack paths, misconfigurations,
 and privilege escalation opportunities from BloodHound Community Edition data.
 """
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 __author__ = "Real-Fruit-Snacks"
 
 from hackles.core.config import config

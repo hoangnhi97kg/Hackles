@@ -21,7 +21,23 @@ def get_foreign_group_membership(
     """Get users from foreign domains in local groups"""
     query = """
     MATCH (u)-[:MemberOf]->(g:Group)
-    WHERE u.domain <> g.domain
+    WHERE toLower(u.domain) <> toLower(g.domain)
+    AND u.domain IS NOT NULL AND u.domain <> ''
+    AND g.domain IS NOT NULL AND g.domain <> ''
+    // Exclude well-known universal groups (exist in every domain)
+    AND NOT u.objectid ENDS WITH '-513'  // Domain Users
+    AND NOT u.objectid ENDS WITH '-514'  // Domain Guests
+    AND NOT u.objectid ENDS WITH '-515'  // Domain Computers
+    AND NOT g.objectid ENDS WITH '-513'
+    AND NOT g.objectid ENDS WITH '-514'
+    AND NOT g.objectid ENDS WITH '-515'
+    // Exclude well-known special identities (by SID and by name for reliability)
+    AND NOT g.objectid = 'S-1-1-0'        // EVERYONE (universal SID)
+    AND NOT g.objectid = 'S-1-5-11'       // AUTHENTICATED USERS (universal SID)
+    AND NOT g.objectid STARTS WITH 'S-1-5-21-0-0-0-'  // Well-known placeholder SIDs
+    // Name-based filters (BloodHound may store these with domain-specific SIDs)
+    AND NOT g.name STARTS WITH 'EVERYONE@'
+    AND NOT g.name STARTS WITH 'AUTHENTICATED USERS@'
     RETURN
         u.name AS user,
         u.domain AS user_domain,

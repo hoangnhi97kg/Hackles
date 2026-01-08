@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table
 from hackles.queries.base import register_query
@@ -47,6 +48,7 @@ def get_unconstrained_delegation(
             ["Computer", "Operating System", "Enabled"],
             [[r["name"], r["os"], r["enabled"]] for r in results],
         )
+        print_abuse_for_query("unconstrained", results, target_key="name")
 
     # Also show DCs with unconstrained delegation (INFO only, no severity)
     print_header("Domain Controllers (Unconstrained Delegation)")

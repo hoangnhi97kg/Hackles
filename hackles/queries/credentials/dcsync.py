@@ -21,18 +21,33 @@ if TYPE_CHECKING:
     severity=Severity.CRITICAL,
 )
 def get_dcsync(bh: BloodHoundCE, domain: str | None = None, severity: Severity = None) -> int:
-    """Get non-admin principals with DCSync privileges"""
+    """Get non-admin principals with DCSync privileges.
+
+    Uses actual group membership to determine admin status (more accurate than admincount).
+    Excludes legitimate principals: Domain Controllers, Enterprise Domain Controllers, etc.
+    """
     domain_filter = "AND toUpper(d.name) = toUpper($domain)" if domain else ""
     params = {"domain": domain} if domain else {}
 
-    # Filter out legitimate groups that need DCSync for replication
+    # Filter out legitimate groups and check actual DA/EA membership (not just admincount)
     query = f"""
     MATCH (n)-[:DCSync|GetChanges|GetChangesAll]->(d:Domain)
-    WHERE (n.admincount IS NULL OR n.admincount = false)
+    WHERE (n:User OR n:Group OR n:Computer)
+    // Exclude principals that are members of Domain Admins, Enterprise Admins, or Domain Controllers
+    AND NOT EXISTS {{
+        MATCH (n)-[:MemberOf*1..]->(g:Group)
+        WHERE g.objectid ENDS WITH '-512' OR g.objectid ENDS WITH '-519' OR g.objectid ENDS WITH '-516'
+    }}
+    // Exclude built-in admin groups by RID
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    // Exclude legitimate replication groups/principals
     AND NOT n.name STARTS WITH 'ENTERPRISE DOMAIN CONTROLLERS@'
     AND NOT n.name STARTS WITH 'ENTERPRISE READ-ONLY DOMAIN CONTROLLERS@'
-    AND NOT n.objectid ENDS WITH '-516'
-    AND NOT n.objectid ENDS WITH '-521'
+    AND NOT n.name STARTS WITH 'DOMAIN CONTROLLERS@'
+    AND NOT n.objectid ENDS WITH '-516'  // Domain Controllers group
+    AND NOT n.objectid ENDS WITH '-521'  // RODC group
     {domain_filter}
     RETURN DISTINCT
         n.name AS name,

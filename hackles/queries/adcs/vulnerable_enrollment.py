@@ -27,6 +27,9 @@ def get_vulnerable_enrollment(
     MATCH p=(n)-[:Enroll|AutoEnroll]->(ct:CertTemplate)-[:PublishedTo]->(ca:EnterpriseCA)
     WHERE ct.enrolleesuppliessubject = true
     AND (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN
         n.name AS principal,

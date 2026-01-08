@@ -116,6 +116,39 @@ def init_owned_cache(bh: BloodHoundCE) -> None:
         config.owned_cache = {}
 
 
+def check_domain_data_quality(bh: BloodHoundCE) -> None:
+    """Check for domain naming anomalies that could affect query accuracy."""
+    if config.output_format != "table":
+        return  # Skip in JSON/CSV/HTML output modes
+
+    try:
+        # Check if object domains differ from Domain node names
+        query = """
+        MATCH (d:Domain)
+        WITH collect(toLower(d.name)) AS domain_names
+        MATCH (n)
+        WHERE n.domain IS NOT NULL AND n.domain <> ''
+        AND NOT toLower(n.domain) IN domain_names
+        RETURN DISTINCT n.domain AS object_domain
+        LIMIT 5
+        """
+        results = bh.run_query(query)
+        if results:
+            mismatched_domains = [r["object_domain"] for r in results]
+            print(
+                f"{colors.WARNING}[!] Data Quality Warning: Object domains don't match Domain nodes{colors.END}"
+            )
+            print(f"    Objects have domain: {', '.join(mismatched_domains[:3])}")
+            print("    Domain filtering (-d) may not work as expected.")
+            print("    Run --hygiene to check for malformed computer names.")
+            print()
+    except Exception as e:
+        if config.debug_mode:
+            print(
+                f"{colors.WARNING}[!] Warning: Could not check domain data quality: {e}{colors.END}"
+            )
+
+
 def collect_stats_data(bh: BloodHoundCE, domain: Optional[str] = None) -> Dict[str, Any]:
     """Collect domain statistics as a dictionary for JSON/CSV output."""
     domain_filter = "WHERE toUpper(n.domain) = toUpper($domain)" if domain else ""
@@ -784,6 +817,9 @@ def main():
         status_print(
             f"{colors.BLUE}[*] Found {len(config.owned_cache)} owned principal(s){colors.END}"
         )
+
+    # Check for domain data quality issues
+    check_domain_data_quality(bh)
 
     try:
         # === CLEAR OWNED (early exit) ===

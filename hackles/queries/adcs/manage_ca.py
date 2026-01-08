@@ -24,8 +24,9 @@ def get_manage_ca(bh: BloodHoundCE, domain: str | None = None, severity: Severit
     query = f"""
     MATCH (n)-[:ManageCA]->(ca:EnterpriseCA)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN n.name AS principal, {node_type("n")} AS type, ca.name AS ca
     LIMIT 50

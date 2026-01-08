@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -52,5 +53,6 @@ def get_print_operators_members(
             ["Group", "Member", "Type", "Enabled"],
             [[r["group_name"], r["member"], r["member_type"], r["enabled"]] for r in results],
         )
+        print_abuse_for_query("print_operators", results, target_key="member")
 
     return result_count

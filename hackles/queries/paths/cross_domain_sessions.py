@@ -21,7 +21,9 @@ def get_cross_domain_sessions(
     """Find sessions crossing domain boundaries"""
     query = """
     MATCH (c:Computer)-[:HasSession]->(u:User)
-    WHERE c.domain <> u.domain
+    WHERE toLower(c.domain) <> toLower(u.domain)
+    AND c.domain IS NOT NULL AND c.domain <> ''
+    AND u.domain IS NOT NULL AND u.domain <> ''
     RETURN c.name AS computer, c.domain AS computer_domain, u.name AS user, u.domain AS user_domain
     LIMIT 50
     """

@@ -35,8 +35,9 @@ def get_esc3_enrollment_agent(
     MATCH (u)-[:Enroll]->(c:CertTemplate)
     WHERE '1.3.6.1.4.1.311.20.2.1' IN c.effectiveekus
     AND (u.admincount IS NULL OR u.admincount = false)
-    AND NOT u.objectid ENDS WITH '-512'
-    AND NOT u.objectid ENDS WITH '-519'
+    AND NOT u.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT u.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT u.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     OPTIONAL MATCH (c)-[:PublishedTo]->(ca:EnterpriseCA)
     RETURN

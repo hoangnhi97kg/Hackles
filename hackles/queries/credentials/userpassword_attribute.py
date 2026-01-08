@@ -29,10 +29,14 @@ def get_userpassword_attribute(
     query = f"""
     MATCH (n)
     WHERE n.userpassword IS NOT NULL
+    AND n.userpassword <> ''
+    AND trim(n.userpassword) <> ''
     {domain_filter}
     RETURN n.name AS name, {node_type("n")} AS type, n.userpassword AS password
     """
     results = bh.run_query(query, params)
+    # Additional Python-side filtering for empty/whitespace-only passwords
+    results = [r for r in results if r.get("password") and str(r["password"]).strip()]
     result_count = len(results)
 
     if not print_header("Plaintext Passwords (userPassword)", severity, result_count):

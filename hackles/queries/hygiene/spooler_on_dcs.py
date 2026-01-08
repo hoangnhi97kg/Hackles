@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -46,5 +47,6 @@ def get_spooler_on_dcs(
             ["Domain Controller", "OS", "Spooler Enabled"],
             [[r["domain_controller"], r["os"], r["spooler_enabled"]] for r in results],
         )
+        print_abuse_for_query("print_spooler", results, target_key="domain_controller")
 
     return result_count

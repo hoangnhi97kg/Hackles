@@ -34,8 +34,13 @@ def get_chained_acl_abuse(
     query = f"""
     MATCH (n)-[:WriteDacl|WriteOwner]->(pivot)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     MATCH (pivot)-[:GenericAll|WriteDacl|WriteOwner|ForceChangePassword]->(highvalue)
     WHERE (highvalue.highvalue = true OR highvalue:Tag_Tier_Zero)
     AND highvalue <> n

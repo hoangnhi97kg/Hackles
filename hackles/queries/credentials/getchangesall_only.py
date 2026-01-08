@@ -36,6 +36,9 @@ def get_getchangesall_only(
     WHERE NOT (n)-[:GetChanges]->(d)
     AND NOT (n)-[:DCSync]->(d)
     AND (n.admincount IS NULL OR n.admincount = false)
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     AND NOT n.name STARTS WITH 'ENTERPRISE DOMAIN CONTROLLERS@'
     AND NOT n.objectid ENDS WITH '-516'
     {domain_filter}

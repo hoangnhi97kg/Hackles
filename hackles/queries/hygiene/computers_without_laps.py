@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_for_query
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
 from hackles.queries.base import register_query
@@ -61,5 +62,6 @@ def get_computers_without_laps(
         )
         if len(results) > 20:
             print_warning(f"... and {len(results) - 20} more")
+        print_abuse_for_query("laps", results, target_key="computer")
 
     return result_count

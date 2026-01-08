@@ -5,6 +5,106 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-01-07
+
+### Added
+
+- **Comprehensive Abuse Command System Expansion**: Extended `--abuse` flag with 4 new template files and 50+ new attack techniques:
+
+  **New Template Files:**
+  - `groups.yaml` - Dangerous group membership abuse (DNSAdmins, Backup Operators, Server Operators, Print Operators, Account Operators, GPO Creators, Schema Admins, Enterprise Admins)
+  - `coercion.yaml` - Authentication coercion attacks (PrintSpooler/PrinterBug, PetitPotam, DFSCoerce, ShadowCoerce, WebDAV, CoerceToRelay chains)
+  - `gpo.yaml` - GPO abuse commands (GPLink, GPO modification, ownership takeover)
+  - `azure.yaml` - Azure/Entra ID attacks (AZAddMembers, AZAddOwner, AZAddSecret, AZGlobalAdmin, AZPrivilegedRoleAdmin, AADConnect, AZVMContributor, AZKeyVaultReader, AZResetPassword, AZUserAccessAdministrator, AZOwner)
+
+  **Enhanced Existing Templates:**
+  - `acl.yaml` - Added OU/Container targets for GenericAll, GenericWrite, WriteDacl, WriteOwner, AllExtendedRights, Owns; New edge types: AddSelf, WriteSPN, AddKeyCredentialLink, WriteAccountRestrictions
+  - `credentials.yaml` - Added PasswdNotReqd, ShadowCredentials, ReadLAPSPassword, ReadGMSAPassword, WriteSPN, GetChanges, GetChangesAll
+  - `adcs.yaml` - Added ESC5, ESC13, ESC14, ESC15 (CVE-2024-49019)
+  - `lateral.yaml` - Added SQLAdmin edge type with xp_cmdshell exploitation
+
+  **New Edge Type Mappings (41 total):**
+  - ACL: AddKeyCredentialLink, WriteSPN, AddSelf, WriteAccountRestrictions
+  - Credentials: ReadLAPSPassword, ReadGMSAPassword, DCSync, GetChanges, GetChangesAll
+  - Azure: 15 edge types (AZAddMembers, AZGlobalAdmin, SyncedToEntraUser, etc.)
+  - Lateral: SQLAdmin
+  - GPO: GPLink
+
+  **Queries Now Display Abuse Commands (29 total, up from 9):**
+  - Groups: dnsadmins_members, backup_operators_members, server_operators_members, print_operators_members, account_operators_members, gpo_creator_owners
+  - Credentials: passwd_notreqd, shadow_credentials, gmsa_readers
+  - Hygiene: computers_without_laps, spooler_on_dcs
+  - Delegation: unconstrained_delegation, constrained_delegation, constrained_delegation_dangerous, rbcd, rbcd_targets
+  - ACL: write_owner, owns_relationships, addself_privileged, write_spn_paths, non_admin_owners
+
+### Fixed
+
+- **Admin Group False Positives in Non-Admin Queries**: Added RID-based exclusions (`-512`, `-519`, `-544`) to 30 queries that previously only checked the `admincount` property. This prevents built-in admin groups (Domain Admins, Enterprise Admins, Administrators) from appearing in "non-admin" findings when their `admincount` field is NULL or false in BloodHound data. Affected queries include:
+  - ACL: `acl_abuse`, `generic_all`, `generic_write`, `write_dacl`, `write_owner`, `force_change_password`, `all_extended_rights`, `add_member`, `chained_acl_abuse`, `gpo_control_privileged`, `non_admin_owners`, `add_allowed_to_act`, `schema_config_control`, `write_spn_paths`, `addself_privileged`, `container_acl_abuse`
+  - Credentials: `dcsync`, `gmsa_readers`, `shadow_credentials`, `getchangesall_only`
+  - ADCS: `manage_ca`, `manage_certificates`, `vulnerable_enrollment`, `adcs_escalation_paths`, `esc3_enrollment_agent`
+  - Delegation: `rbcd_targets`
+  - Lateral: `local_admin_rights`, `rdp_access`, `dcom_access`, `psremote_access`, `sql_admin`
+
+- **Operator Group False Positives in ACL Queries**: Extended RID-based exclusions to include built-in operator groups (`-548` Account Operators, `-549` Server Operators, `-550` Print Operators, `-551` Backup Operators) in all 14 ACL queries. These groups have elevated privileges by design and were appearing as false positives in "non-admin" ACL findings. Affected queries: `acl_abuse`, `generic_all`, `generic_write`, `write_dacl`, `write_owner`, `force_change_password`, `all_extended_rights`, `add_member`, `chained_acl_abuse`, `gpo_control_privileged`, `non_admin_owners`, `add_allowed_to_act`, `schema_config_control`, `write_spn_paths`, `addself_privileged`
+
+- **Executive Summary DCSync Count**: Fixed DCSync non-admin count in executive summary that incorrectly included legitimate replication groups. Now properly excludes Domain Controllers (-516), RODC (-521), and admin groups by RID
+
+- **NULL Owner Display in Owns Relationships**: Fixed display of "-" for NULL owner names in `owns_relationships.py` and `non_admin_owners.py` by filtering out nodes without valid names
+
+- **NULL Name in High Value Targets**: Fixed GPO objects with empty/NULL names appearing in High Value Targets listing by adding name validation filter
+
+- **Cross-Domain Ownership False Positives**: Added case-insensitive domain comparison (`toLower()`) and empty string filtering to prevent false positives where the same domain appears with different casing (e.g., `DC01.OSCP.EXAM` vs `dc01.oscp.exam`)
+
+- **Plaintext Passwords Empty Results**: Fixed query returning objects with empty `userpassword` attribute. Added Cypher-level filtering (`<> ''`, `trim() <> ''`) and Python post-processing to only show objects with actual password values
+
+- **DCSync Query Consolidation**: Removed duplicate `non_admin_dcsync.py` query that used different logic than `dcsync.py`, causing count discrepancies. Updated `dcsync.py` to use actual DA/EA group membership check instead of unreliable `admincount` property
+
+- **Stale Accounts Percentage Calculation**: Fixed incorrect calculation that showed 50% instead of 7.4%. Was dividing by users who logged in at least once; now correctly divides by total enabled users
+
+- **Table Column Width**: Increased `max_width` from 50 to 65 characters to prevent truncation of long AD group names like "DENIED RODC PASSWORD REPLICATION GROUP@DOMAIN.COM" and "ENTERPRISE READ-ONLY DOMAIN CONTROLLERS@DOMAIN.COM"
+
+- **Unix Timestamp Display**: Added automatic formatting of Unix epoch timestamps to human-readable dates (YYYY-MM-DD) in table output. Timestamps like `1648834256.0` now display as `2022-04-01`. Added `format_timestamp()` and `is_unix_timestamp()` utilities in `hackles/core/utils.py`
+
+- **DCSync Query False Positive for Domain Controllers**: Fixed DCSync non-admin query incorrectly flagging Domain Controller computers as having unexpected DCSync privileges. Added membership check for Domain Controllers group (RID `-516`) in addition to existing RID exclusions. DCs legitimately have DCSync rights via their group membership
+
+- **RBCD Attack Targets False Positives for Operator Groups**: Extended RID exclusions in RBCD query to include privileged operator groups: Account Operators (`-548`), Server Operators (`-549`), and Backup Operators (`-551`). These groups legitimately have GenericAll/GenericWrite on computers by design
+
+- **Case-Sensitive Domain Comparison False Positives**: Fixed `foreign_group_membership.py` and `cross_domain_sessions.py` queries that used case-sensitive domain comparison (`u.domain <> g.domain`). Now uses `toLower()` for case-insensitive comparison matching the pattern in `cross_domain_ownership.py`. Prevents false positives when same domain is stored with different casing
+
+- **LAPS Recommendation Excludes Domain Controllers**: Fixed executive summary LAPS recommendation that incorrectly listed Domain Controllers as needing LAPS. DCs don't use LAPS (they require different protection); now excluded via Domain Controllers group membership check
+
+- **Foreign Group Membership Empty Domain Filter**: Added empty string check (`<> ''`) in addition to NULL check. Prevents entries with empty domain strings from appearing as false positive "foreign" memberships
+
+- **Cross-Domain Sessions Empty Domain Filter**: Same empty string filtering fix applied to cross-domain sessions query
+
+- **Malformed DC Hostname in Executive Summary Commands**: Fixed generated exploitation commands (nxc, secretsdump, GetUserSPNs, etc.) using malformed hostnames like `DC01.DC01.OSCP.EXAM` instead of the correct `DC01.OSCP.EXAM`. Added `_fix_malformed_hostname()` helper that detects and corrects duplicated hostname prefixes (e.g., `SEGMENT.SEGMENT.DOMAIN.COM` -> `SEGMENT.DOMAIN.COM`). Commands in "Recommended Next Steps" now use corrected hostnames that will actually resolve
+
+- **EVERYONE/AUTHENTICATED USERS in Owned Group Memberships**: Filtered implicit system group memberships from "Owned Group Memberships" query results. Every authenticated user is automatically a member of EVERYONE and AUTHENTICATED USERS, making these entries non-actionable noise. Now excludes groups with well-known SIDs (`S-1-1-0`, `S-1-5-11`) and name patterns (`EVERYONE@*`, `AUTHENTICATED USERS@*`)
+
+- **Cross-Domain Ownership Admin Group Exclusion**: Added RID exclusions for built-in admin groups (`-512`, `-519`, `-544`) to prevent false positives. Built-in admin groups like ADMINISTRATORS legitimately own domain objects and should not be flagged as suspicious cross-domain ownership
+
+- **Malformed Computer Names Detection Fix**: Fixed query not detecting duplicated hostname prefixes (e.g., `DC01.DC01.DOMAIN.COM`). Neo4j's regex engine doesn't fully support backreferences (`\1`), so replaced regex approach with Cypher string functions: `split()` to extract first segment, then `STARTS WITH` to check for duplication pattern. This reliably detects malformed FQDNs
+
+- **Foreign Group Membership False Positives**: Added RID exclusions for well-known universal groups (`-513` Domain Users, `-514` Domain Guests, `-515` Domain Computers) and special identity SIDs (`S-1-1-0` EVERYONE, `S-1-5-11` AUTHENTICATED USERS). These groups exist in every domain and their membership is not a security finding
+
+- **Foreign Group Membership EVERYONE/AUTHENTICATED USERS Fix**: Added name-based filters (`g.name STARTS WITH 'EVERYONE@'` and `g.name STARTS WITH 'AUTHENTICATED USERS@'`) in addition to SID filters. BloodHound stores these well-known groups with domain-specific SIDs rather than universal SIDs, so the original SID-based filters weren't matching
+
+- **Dangerous ACL Relationships Operator Group Exclusions**: Extended RID exclusions in `acl_abuse.py` to include all privileged operator groups: Account Operators (`-548`), Server Operators (`-549`), Print Operators (`-550`), and Backup Operators (`-551`). These groups legitimately have GenericAll/GenericWrite permissions on AD objects by design and are protected by AdminSDHolder. This prevents 70+ false positives from appearing in the "Dangerous ACL Relationships" output
+
+- **LAPS Recommendation Count Clarification**: Updated "Low LAPS Coverage" recommendation in Executive Summary to show "N non-DC computers" instead of just "N computers". This clarifies why the recommendation count (excludes Domain Controllers) differs from the Security Posture count (includes all computers). DCs don't need LAPS since their admin password is the DSRM recovery password
+
+### Added
+
+- **Domain Data Quality Warning**: Added startup check that warns users when object `.domain` properties don't match Domain node names. This is common with BloodHound collection issues where objects are stored with `DC01.OSCP.EXAM` instead of `OSCP.EXAM`. The warning explains that domain filtering (`-d`) may not work as expected and suggests running `--hygiene` to check for malformed computer names
+
+- **Malformed Computer Names Detection** (`hackles/queries/hygiene/malformed_computer_names.py`): New data quality query that detects computer names with duplicated hostname prefixes (e.g., `DC01.DC01.DOMAIN.COM` instead of `DC01.DOMAIN.COM`). This indicates AD misconfiguration in the `dNSHostName` attribute. Includes remediation guidance using `Set-ADComputer`
+
+### Changed
+
+- **Abuse Templates**: Now contain 2,135+ lines of exploitation commands across 9 template files
+- **Query Registry**: Consolidated to prevent duplicate query names with different results
+
 ## [2.4.0] - 2026-01-05
 
 ### Added
@@ -363,7 +463,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment variable support for credentials
 - No hardcoded sensitive values
 
-[Unreleased]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.3.0...v2.5.0
 [2.3.0]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.1.1...v2.2.0
 [2.1.1]: https://github.com/Real-Fruit-Snacks/hackles/compare/v2.1.0...v2.1.1

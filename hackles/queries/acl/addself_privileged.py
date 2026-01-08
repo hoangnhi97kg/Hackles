@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from hackles.abuse import print_abuse_section
 from hackles.core.cypher import node_type
 from hackles.display.colors import Severity
 from hackles.display.tables import print_header, print_subheader, print_table, print_warning
@@ -34,8 +35,13 @@ def get_addself_privileged(
     query = f"""
     MATCH (n)-[:AddSelf]->(g:Group)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
+    AND NOT n.objectid ENDS WITH '-548'  // Account Operators
+    AND NOT n.objectid ENDS WITH '-549'  // Server Operators
+    AND NOT n.objectid ENDS WITH '-550'  // Print Operators
+    AND NOT n.objectid ENDS WITH '-551'  // Backup Operators
     AND (g.highvalue = true OR g:Tag_Tier_Zero OR g.admincount = true
          OR g.objectid ENDS WITH '-512'
          OR g.objectid ENDS WITH '-519'
@@ -61,5 +67,6 @@ def get_addself_privileged(
             ["Principal", "Type", "Target Group"],
             [[r["principal"], r["type"], r["target_group"]] for r in results],
         )
+        print_abuse_section(results, "AddSelf")
 
     return result_count

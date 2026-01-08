@@ -33,8 +33,9 @@ def get_manage_certificates(
     query = f"""
     MATCH (n)-[:ManageCertificates]->(ca:EnterpriseCA)
     WHERE (n.admincount IS NULL OR n.admincount = false)
-    AND NOT n.objectid ENDS WITH '-512'
-    AND NOT n.objectid ENDS WITH '-519'
+    AND NOT n.objectid ENDS WITH '-512'  // Domain Admins
+    AND NOT n.objectid ENDS WITH '-519'  // Enterprise Admins
+    AND NOT n.objectid ENDS WITH '-544'  // Administrators
     {domain_filter}
     RETURN n.name AS principal,
            {node_type("n")} AS type,

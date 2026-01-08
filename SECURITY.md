@@ -47,9 +47,9 @@ If you discover a security vulnerability in Hackles, please report it responsibl
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 2.5.x   | :white_check_mark: |
 | 2.0.x   | :white_check_mark: |
-| 0.3.x   | :white_check_mark: |
-| < 0.3   | :x:                |
+| < 2.0   | :x:                |
 
 ## Responsible Use
 

