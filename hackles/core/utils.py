@@ -1,6 +1,6 @@
 """Shared utility functions for hackles"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -29,7 +29,7 @@ def format_timestamp(value: Union[int, float, None]) -> str:
         if ts < 0 or ts > 4102444800:  # 2100-01-01
             return "-"
 
-        dt = datetime.utcfromtimestamp(ts)
+        dt = datetime.fromtimestamp(ts, timezone.utc)
         return dt.strftime("%Y-%m-%d")
     except (ValueError, TypeError, OSError):
         return "-"
